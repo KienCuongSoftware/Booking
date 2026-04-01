@@ -18,4 +18,14 @@ enum UserRole: string
             self::Customer => 'Đặt phòng',
         };
     }
+
+    public function dashboardRouteName(): string
+    {
+        return match ($this) {
+            self::Admin => 'admin.dashboard',
+            self::Host => 'host.dashboard',
+            self::Staff => 'staff.dashboard',
+            self::Customer => 'customer.dashboard',
+        };
+    }
 }
