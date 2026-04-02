@@ -1,6 +1,19 @@
 <x-guest-layout>
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
+    <x-google-auth-button class="mb-6">
+        {{ __('Đăng nhập bằng Google') }}
+    </x-google-auth-button>
+
+    <div class="relative mb-6">
+        <div class="absolute inset-0 flex items-center">
+            <span class="w-full border-t border-red-100"></span>
+        </div>
+        <div class="relative flex justify-center text-xs uppercase tracking-wide">
+            <span class="bg-white px-3 text-gray-500">{{ __('Hoặc') }}</span>
+        </div>
+    </div>
+
     <form method="POST" action="{{ route('login') }}">
         @csrf
 

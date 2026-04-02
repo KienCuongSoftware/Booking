@@ -1,4 +1,21 @@
 <x-guest-layout>
+    <p class="text-sm text-gray-600 mb-4 leading-relaxed">
+        {{ __('Sau khi gửi form, bạn sẽ nhận mã OTP qua email để hoàn tất đăng ký.') }}
+    </p>
+
+    <x-google-auth-button class="mb-6">
+        {{ __('Đăng ký bằng Google') }}
+    </x-google-auth-button>
+
+    <div class="relative mb-6">
+        <div class="absolute inset-0 flex items-center">
+            <span class="w-full border-t border-red-100"></span>
+        </div>
+        <div class="relative flex justify-center text-xs uppercase tracking-wide">
+            <span class="bg-white px-3 text-gray-500">{{ __('Hoặc đăng ký email') }}</span>
+        </div>
+    </div>
+
     <form method="POST" action="{{ route('register') }}">
         @csrf
 
