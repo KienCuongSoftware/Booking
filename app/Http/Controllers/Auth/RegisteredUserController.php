@@ -2,33 +2,26 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Illuminate\Auth\Events\Registered;
+use App\Services\OtpChallengeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
 {
-    /**
-     * Display the registration view.
-     */
     public function create(): View
     {
         return view('auth.register');
     }
 
     /**
-     * Handle an incoming registration request.
-     *
      * @throws ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, OtpChallengeService $otp): RedirectResponse
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -36,17 +29,13 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => $request->password,
-            'role' => UserRole::Customer,
-        ]);
+        $otp->sendRegistrationChallenge(
+            $request->email,
+            $request->name,
+            $request->password
+        );
 
-        event(new Registered($user));
-
-        Auth::login($user);
-
-        return redirect()->intended(route($user->role->dashboardRouteName(), absolute: false));
+        return redirect()->route('register.verify')
+            ->with('status', __('Chúng tôi đã gửi mã OTP tới email của bạn.'));
     }
 }

@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Mail\OtpCodeMail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class RegistrationTest extends TestCase
@@ -16,16 +18,30 @@ class RegistrationTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_new_users_can_register(): void
+    public function test_new_users_can_register_after_otp_verification(): void
     {
-        $response = $this->post('/register', [
+        Mail::fake();
+
+        $this->post('/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
-        ]);
+        ])
+            ->assertRedirect(route('register.verify'));
+
+        $this->assertGuest();
+
+        $code = null;
+        Mail::assertSent(OtpCodeMail::class, function (OtpCodeMail $mail) use (&$code) {
+            $code = $mail->code;
+
+            return true;
+        });
+
+        $this->post('/register/verify', ['code' => $code])
+            ->assertRedirect(route('customer.dashboard', absolute: false));
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('customer.dashboard', absolute: false));
     }
 }
