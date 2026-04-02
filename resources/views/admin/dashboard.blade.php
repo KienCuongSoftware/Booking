@@ -1,17 +1,36 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-red-800 leading-tight">
-            {{ __('Admin') }} — {{ auth()->user()->role->labelVi() }}
+            {{ __('Admin Dashboard') }} - {{ auth()->user()->role->labelVi() }}
         </h2>
     </x-slot>
 
     <div class="py-10 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-7xl mx-auto">
+        <div class="max-w-7xl mx-auto space-y-6">
             <div class="bg-white border border-red-100 rounded-2xl shadow-md shadow-red-900/5 overflow-hidden">
                 <div class="p-8 text-gray-800 space-y-3">
-                    <p class="leading-relaxed">{{ __('Khu vực quản trị: quản lý toàn bộ hệ thống, người dùng và cấu hình.') }}</p>
-                    <p class="text-sm text-gray-500">{{ __('Route:') }} <code class="text-xs bg-red-50 text-red-800 px-2 py-1 rounded-lg border border-red-100">/admin/dashboard</code></p>
+                    <p class="leading-relaxed">{{ __('Admin has full control over users, roles, hotels, rooms, bookings, and global configuration.') }}</p>
+                    <p class="text-sm text-gray-500">{{ __('Access scope: entire system') }}</p>
                 </div>
+            </div>
+
+            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <a href="{{ route('admin.overview') }}" class="rounded-2xl border border-red-100 bg-red-50/40 p-5 hover:bg-red-100/60 transition">
+                    <p class="text-sm text-gray-600">{{ __('User Management') }}</p>
+                    <p class="mt-1 text-sm font-medium text-red-700">{{ __('Role assignment and account governance') }}</p>
+                </a>
+                <a href="{{ route('admin.overview') }}" class="rounded-2xl border border-red-100 bg-red-50/40 p-5 hover:bg-red-100/60 transition">
+                    <p class="text-sm text-gray-600">{{ __('Hotel and Room Control') }}</p>
+                    <p class="mt-1 text-sm font-medium text-red-700">{{ __('Review platform-wide inventory') }}</p>
+                </a>
+                <a href="{{ route('admin.overview') }}" class="rounded-2xl border border-red-100 bg-red-50/40 p-5 hover:bg-red-100/60 transition">
+                    <p class="text-sm text-gray-600">{{ __('Booking Supervision') }}</p>
+                    <p class="mt-1 text-sm font-medium text-red-700">{{ __('Monitor status changes and incidents') }}</p>
+                </a>
+                <a href="{{ route('admin.overview') }}" class="rounded-2xl border border-red-100 bg-red-50/40 p-5 hover:bg-red-100/60 transition">
+                    <p class="text-sm text-gray-600">{{ __('System Configuration') }}</p>
+                    <p class="mt-1 text-sm font-medium text-red-700">{{ __('Mail, OAuth, and business parameters') }}</p>
+                </a>
             </div>
         </div>
     </div>
