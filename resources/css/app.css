@@ -6,4 +6,14 @@
     html {
         color-scheme: light;
     }
+
+    /* Ẩn phần tử Alpine có x-cloak trước khi JS khởi tạo (tránh nháy modal / overlay) */
+    [x-cloak] {
+        display: none !important;
+    }
+
+    /* Nền mờ cho <dialog> (không phụ thuộc Alpine) */
+    #hotel-delete-dialog::backdrop {
+        background: rgb(17 24 39 / 0.6);
+    }
 }
