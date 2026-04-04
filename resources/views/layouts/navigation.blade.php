@@ -4,7 +4,7 @@
             <div class="flex">
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route(auth()->user()->role->dashboardRouteName()) }}" class="rounded-xl p-1 -m-1 hover:bg-red-50 transition-colors">
-                        <x-application-logo class="block h-9 w-auto fill-current text-red-600" />
+                        <x-application-logo class="h-9 w-9" />
                     </a>
                 </div>
 
@@ -13,7 +13,7 @@
                         :href="route(auth()->user()->role->dashboardRouteName())"
                         :active="request()->routeIs('admin.dashboard', 'host.dashboard', 'staff.dashboard', 'customer.dashboard', 'dashboard')"
                     >
-                        {{ __('Dashboard') }}
+                        {{ __('Bảng điều khiển') }}
                     </x-nav-link>
                 </div>
             </div>
@@ -27,7 +27,7 @@
                         >
                             <div class="flex flex-col items-start text-start">
                                 <span>{{ Auth::user()->name }}</span>
-                                <span class="text-xs font-normal text-red-600/80">{{ Auth::user()->role->labelVi() }}</span>
+                                <span class="text-xs font-normal text-red-600/80">{{ Auth::user()->role->shortLabelVi() }}</span>
                             </div>
                             <svg class="fill-current h-4 w-4 text-red-400 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -37,7 +37,7 @@
 
                     <x-slot name="content">
                         <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
+                            {{ __('Hồ sơ') }}
                         </x-dropdown-link>
 
                         <form method="POST" action="{{ route('logout') }}">
@@ -46,7 +46,7 @@
                             <x-dropdown-link :href="route('logout')"
                                     onclick="event.preventDefault();
                                                 this.closest('form').submit();">
-                                {{ __('Log Out') }}
+                                {{ __('Đăng xuất') }}
                             </x-dropdown-link>
                         </form>
                     </x-slot>
@@ -74,7 +74,7 @@
                 :href="route(auth()->user()->role->dashboardRouteName())"
                 :active="request()->routeIs('admin.dashboard', 'host.dashboard', 'staff.dashboard', 'customer.dashboard', 'dashboard')"
             >
-                {{ __('Dashboard') }}
+                {{ __('Bảng điều khiển') }}
             </x-responsive-nav-link>
         </div>
 
@@ -86,7 +86,7 @@
 
             <div class="mt-3 space-y-1 px-2">
                 <x-responsive-nav-link :href="route('profile.edit')">
-                    {{ __('Profile') }}
+                    {{ __('Hồ sơ') }}
                 </x-responsive-nav-link>
 
                 <form method="POST" action="{{ route('logout') }}">
@@ -95,7 +95,7 @@
                     <x-responsive-nav-link :href="route('logout')"
                             onclick="event.preventDefault();
                                         this.closest('form').submit();">
-                        {{ __('Log Out') }}
+                        {{ __('Đăng xuất') }}
                     </x-responsive-nav-link>
                 </form>
             </div>
