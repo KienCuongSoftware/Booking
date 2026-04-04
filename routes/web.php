@@ -7,7 +7,7 @@ use App\Http\Controllers\Customer\DashboardController as CustomerDashboardContro
 use App\Http\Controllers\Host\BookingController as HostBookingController;
 use App\Http\Controllers\Host\DashboardController as HostDashboardController;
 use App\Http\Controllers\Host\HotelController as HostHotelController;
-use App\Http\Controllers\Host\RoomController as HostRoomController;
+use App\Http\Controllers\Host\RoomTypeController as HostRoomTypeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Staff\BookingController as StaffBookingController;
 use App\Http\Controllers\Staff\DashboardController as StaffDashboardController;
@@ -33,8 +33,13 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
 
 Route::middleware(['auth', 'verified', 'role:host'])->prefix('host')->name('host.')->group(function () {
     Route::get('/dashboard', HostDashboardController::class)->name('dashboard');
-    Route::get('/hotels', [HostHotelController::class, 'index'])->name('hotels.index');
-    Route::get('/rooms', [HostRoomController::class, 'index'])->name('rooms.index');
+    Route::resource('hotels', HostHotelController::class);
+    Route::get('/rooms', [HostRoomTypeController::class, 'index'])->name('rooms.index');
+    Route::get('/hotels/{hotel}/room-types/create', [HostRoomTypeController::class, 'create'])->name('hotels.room-types.create');
+    Route::post('/hotels/{hotel}/room-types', [HostRoomTypeController::class, 'store'])->name('hotels.room-types.store');
+    Route::get('/room-types/{roomType}/edit', [HostRoomTypeController::class, 'edit'])->name('room-types.edit');
+    Route::put('/room-types/{roomType}', [HostRoomTypeController::class, 'update'])->name('room-types.update');
+    Route::delete('/room-types/{roomType}', [HostRoomTypeController::class, 'destroy'])->name('room-types.destroy');
     Route::get('/bookings', [HostBookingController::class, 'index'])->name('bookings.index');
 });
 
