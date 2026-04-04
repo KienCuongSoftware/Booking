@@ -1,59 +1,183 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Booking
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A **Laravel 12** accommodation-booking web application: **PHP 8.2**, MySQL (or any Laravel-supported database), **Vite**, **Tailwind CSS**, and **Alpine.js**. **Laravel Breeze**-style authentication with **role-based areas** for **admin**, **host**, **staff**, and **customer**. Hosts manage **hotels** (thumbnail + gallery, provinces, address, pricing, **hotel-level amenities**) and **room types** (capacity, inventory, **floor area (m²)**, bed configuration lines, **room-level amenities**, images). Reference data is **seeded** (provinces, amenities). **Google OAuth** (Socialite), **email OTP** after registration, and **password change** guarded by **OTP** are supported where configured. UI uses a **sidebar shell** for authenticated areas, Tailwind pagination defaults, and flash messages. Suitable as a **course / portfolio** project (e.g. developed on **XAMPP**); public search and live reservations can be extended in future iterations.
 
-## About Laravel
+**Repository:** [https://github.com/KienCuongSoftware/Booking](https://github.com/KienCuongSoftware/Booking)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Requirements
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **PHP** ^8.2  
+- **Composer**  
+- **Node.js** and **npm** (for Vite / Tailwind assets)  
+- **MySQL** (or any Laravel-supported database)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Installation
 
-## Learning Laravel
+1. **Clone**
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+   ```bash
+   git clone https://github.com/KienCuongSoftware/Booking.git
+   cd Booking
+   ```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+2. **Dependencies**
 
-## Laravel Sponsors
+   ```bash
+   composer install
+   ```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+3. **Environment**
 
-### Premium Partners
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+   Set `DB_*` in `.env`.
 
-## Contributing
+   | Feature | `.env` keys |
+   |--------|-------------|
+   | Database | `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` |
+   | **Google login** | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` (default combines `APP_URL` + `/auth/google/callback`) |
+   | **Email (registration OTP, password OTP, verification)** | `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` — use an **app password** for Gmail if applicable |
+   | **Queues** (if you dispatch queued jobs / mail) | `QUEUE_CONNECTION` — `database` is set in `.env.example`; run `php artisan queue:work` or use `composer run dev` |
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+4. **Migrations**
 
-## Code of Conduct
+   ```bash
+   php artisan migrate
+   ```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+5. **Storage link** (hotel thumbnails, galleries, room-type images)
 
-## Security Vulnerabilities
+   ```bash
+   php artisan storage:link
+   ```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+   Uploaded files under `storage/app/public/` are served at **`/storage/...`** (see `App\Support\PublicDisk`).
+
+6. **(Optional) Seed data**
+
+   Seeds **provinces**, **hotel amenities**, **room amenities**, and (if present) **`UserSeeder`** demo users — adjust `DatabaseSeeder` to match your needs.
+
+   ```bash
+   php artisan db:seed
+   ```
+
+7. **Frontend build**
+
+   ```bash
+   npm install
+   npm run build
+   ```
+
+   For local development with hot reload, use `npm run dev` (see **Running** below).
+
+## Running
+
+```bash
+php artisan serve
+```
+
+Open `http://127.0.0.1:8000` (or the URL Artisan prints).
+
+### Development (server + queue + logs + Vite)
+
+```bash
+composer run dev
+```
+
+Runs `php artisan serve`, `queue:listen`, `pail`, and `npm run dev` via **Concurrently**.
+
+## Features
+
+### Authentication & profile
+
+- **Register** → **email OTP verification** flow (`register/verify`, resend throttled).
+- **Login** / **logout**; optional **Google OAuth** (`/auth/google`, callback).
+- **Forgot password** / **reset password** (token link).
+- **Email verification** (Breeze-style link flow) and **confirm password** where used.
+- **Profile** — update name, email, password; **password change** can require **OTP** (`password/otp` routes).
+- Root **`/`** redirects authenticated users to the **role dashboard**; guests go to **login**.
+
+### Host (`auth` + `verified` + `role:host`)
+
+- **Dashboard** — entry point after login.
+- **Hotels** — full **CRUD**: province, address, star rating, description, **thumbnail**, **gallery** images, **old/new pricing**, **hotel amenities** sync, active flag; **pagination** on index.
+- **Hotel detail** — view hotel and **active room types** (amenities, pricing, inventory preview).
+- **Room types (“Phòng và giá”)** — list with filters by hotel, **pagination (5 per page)**; **create / edit / delete** per hotel: name, images, max guests, quantity, **area (m²)**, prices, bed lines, **room amenities**, visibility; delete confirmation modal (**Alpine** + `x-teleport="body"` for full-screen overlay).
+
+### Staff (`role:staff`)
+
+- **Dashboard**; **bookings** index, **pending**, and **history** (placeholders / flows for operational use).
+
+### Customer (`role:customer`)
+
+- **Dashboard**; **bookings** list, **cancellable** bookings, **rebook** entry points (UI flows aligned with course/demo scope).
+
+### Admin (`role:admin`)
+
+- **Dashboard**; **system overview** page for high-level monitoring.
+
+### Layout & UI
+
+- **Sidebar** navigation by role; **app** layout with header (title slot, profile, logout).
+- **Tailwind** pagination views (`vendor.pagination.tailwind`) registered in `AppServiceProvider`.
+- **Branding** — favicon SVGs under `public/`; `APP_NAME=Booking` in `.env.example`.
+
+## Project structure (high level)
+
+| Area | Paths |
+|------|--------|
+| **HTTP** | `Host\HotelController`, `Host\RoomTypeController`, `Host\BookingController`, `Host\DashboardController`, `Staff\*`, `Customer\*`, `Admin\*`, `ProfileController`, `Auth\*` (session, register, **RegisterOtpController**, **GoogleAuthController**, **PasswordOtpVerificationController**, password reset, email verification) |
+| **Models** | `User`, `Hotel`, `HotelImage`, `Province`, `Amenity`, `RoomAmenity`, `RoomType`, `RoomTypeBedLine`, `RoomTypeImage`, … |
+| **Form requests** | `App\Http\Requests\Host\StoreHotelRequest`, `UpdateHotelRequest`, `StoreRoomTypeRequest`, `UpdateRoomTypeRequest` |
+| **Support** | `App\Support\PublicDisk` — stable **`/storage/...`** URLs for the public disk |
+| **Views** | `resources/views/layouts/` (`app`, `guest`, `sidebar`, `navigation`), `host/hotels/*`, `host/room-types/*`, `components/` (`flash-status`, `icon/*`, `application-logo`), `auth/*`, role dashboards, `profile/*`, `vendor/pagination/*` |
+| **Routes** | `routes/web.php` — role-prefixed groups (`admin`, `host`, `staff`, `customer`), Breeze routes in `routes/auth.php` |
+
+There is **no** separate `routes/api.php` REST surface in this repository; APIs can be added later (e.g. Laravel Sanctum) if you extend the project.
+
+## Caching & queues
+
+- `.env.example` uses **`CACHE_STORE=database`** and **`SESSION_DRIVER=database`** so a local **XAMPP** setup does not require Redis.
+- **`QUEUE_CONNECTION=database`** — run **`php artisan queue:work`** (or **`composer run dev`**) if you rely on **queued** jobs or mail.
+
+## Image URLs
+
+After `php artisan storage:link`, public disk files are available under:
+
+- **`/storage/{path}`** — e.g. hotel and room-type images stored via `store(..., 'public')`.
+
+## Testing
+
+```bash
+php artisan test
+```
+
+## Roadmap / possible extensions
+
+| Area | Today | Possible direction |
+|------|--------|-------------------|
+| **Guest storefront** | Login-centric entry; no public hotel catalog | Search, listing pages, maps, availability |
+| **Bookings** | Role-scoped controllers / views | End-to-end reservation, payments, emails |
+| **API** | Web routes only | Sanctum REST or SPA frontend |
+| **i18n** | Mixed EN/VI strings in views | Laravel localization files |
+
+This project is intended as a **learning / demo** monolith; production hardening (rate limits, audits, monitoring) is left to the maintainer.
+
+## Code style
+
+[Laravel Pint](https://laravel.com/docs/pint):
+
+```bash
+./vendor/bin/pint
+```
+
+## Contributing & security
+
+See [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), and [SECURITY.md](SECURITY.md). Pull request authors can use [PR_DESCRIPTION.md](PR_DESCRIPTION.md) as a template.
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Open-sourced under the [MIT License](LICENSE).
