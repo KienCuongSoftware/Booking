@@ -11,6 +11,14 @@ export default {
 
     theme: {
         extend: {
+            colors: {
+                bcom: {
+                    navy: '#003580',
+                    blue: '#006ce4',
+                    yellow: '#feba02',
+                    'navy-dark': '#001b3d',
+                },
+            },
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },
