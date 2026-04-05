@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-red-800 leading-tight">
-            {{ __('Staff Dashboard') }} - {{ auth()->user()->role->labelVi() }}
+            {{ __('Bảng điều khiển') }} - {{ auth()->user()->role->shortLabelVi() }}
         </h2>
     </x-slot>
 
@@ -9,28 +9,28 @@
         <div class="max-w-7xl mx-auto space-y-6">
             <div class="bg-white border border-red-100 rounded-2xl shadow-md shadow-red-900/5 overflow-hidden">
                 <div class="p-8 text-gray-800 space-y-3">
-                    <p class="leading-relaxed">{{ __('Staff handles booking operations: review, update status, and support customers.') }}</p>
-                    <p class="text-sm text-gray-500">{{ __('Access scope: assigned booking operations') }}</p>
+                    <p class="leading-relaxed">Xử lý vận hành đơn đặt phòng: duyệt đơn, đổi trạng thái và hỗ trợ khách hàng.</p>
+                    <p class="text-sm text-gray-500">Phạm vi truy cập: nghiệp vụ được phân công</p>
                 </div>
             </div>
 
             <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <a href="{{ route('staff.bookings.pending') }}" class="rounded-2xl border border-red-100 bg-red-50/40 p-5 hover:bg-red-100/60 transition">
-                    <p class="text-sm text-gray-600">{{ __('Pending Bookings') }}</p>
-                    <p class="mt-1 text-sm font-medium text-red-700">{{ __('Review and confirm requests') }}</p>
-                </a>
-                <a href="{{ route('staff.bookings.index') }}" class="rounded-2xl border border-red-100 bg-red-50/40 p-5 hover:bg-red-100/60 transition">
-                    <p class="text-sm text-gray-600">{{ __('Status Updates') }}</p>
-                    <p class="mt-1 text-sm font-medium text-red-700">{{ __('pending / confirmed / cancelled / completed') }}</p>
-                </a>
-                <a href="{{ route('staff.bookings.index') }}" class="rounded-2xl border border-red-100 bg-red-50/40 p-5 hover:bg-red-100/60 transition">
-                    <p class="text-sm text-gray-600">{{ __('Customer Support') }}</p>
-                    <p class="mt-1 text-sm font-medium text-red-700">{{ __('Handle booking incidents and requests') }}</p>
-                </a>
-                <a href="{{ route('staff.bookings.history') }}" class="rounded-2xl border border-red-100 bg-red-50/40 p-5 hover:bg-red-100/60 transition">
-                    <p class="text-sm text-gray-600">{{ __('Action History') }}</p>
-                    <p class="mt-1 text-sm font-medium text-red-700">{{ __('Track booking status changes') }}</p>
-                </a>
+                <div class="rounded-2xl border border-red-100 bg-red-50/40 p-5">
+                    <p class="text-sm text-gray-600">Đơn chờ xử lý</p>
+                    <p class="mt-1 text-sm font-medium text-red-700">Rà soát và xác nhận yêu cầu</p>
+                </div>
+                <div class="rounded-2xl border border-red-100 bg-red-50/40 p-5">
+                    <p class="text-sm text-gray-600">Cập nhật trạng thái</p>
+                    <p class="mt-1 text-sm font-medium text-red-700">chờ xử lý / xác nhận / hủy / hoàn tất</p>
+                </div>
+                <div class="rounded-2xl border border-red-100 bg-red-50/40 p-5">
+                    <p class="text-sm text-gray-600">Hỗ trợ khách hàng</p>
+                    <p class="mt-1 text-sm font-medium text-red-700">Xử lý sự cố và yêu cầu đặt phòng</p>
+                </div>
+                <div class="rounded-2xl border border-red-100 bg-red-50/40 p-5">
+                    <p class="text-sm text-gray-600">Lịch sử thao tác</p>
+                    <p class="mt-1 text-sm font-medium text-red-700">Theo dõi thay đổi trạng thái đơn</p>
+                </div>
             </div>
         </div>
     </div>
