@@ -30,7 +30,7 @@ class AuthenticatedSessionController extends Controller
 
         $user = Auth::user();
 
-        return redirect()->intended(route($user->role->dashboardRouteName(), absolute: false));
+        return redirect()->intended(route($user->role->redirectRouteAfterAuthentication(), absolute: false));
     }
 
     /**
