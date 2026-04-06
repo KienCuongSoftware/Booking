@@ -3,27 +3,21 @@
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\SystemOverviewController as AdminSystemOverviewController;
 use App\Http\Controllers\Customer\BookingController as CustomerBookingController;
-use App\Http\Controllers\Customer\DashboardController as CustomerDashboardController;
 use App\Http\Controllers\Host\BookingController as HostBookingController;
 use App\Http\Controllers\Host\DashboardController as HostDashboardController;
 use App\Http\Controllers\Host\HotelController as HostHotelController;
 use App\Http\Controllers\Host\RoomTypeController as HostRoomTypeController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Public\HotelCatalogController;
 use App\Http\Controllers\Staff\BookingController as StaffBookingController;
 use App\Http\Controllers\Staff\DashboardController as StaffDashboardController;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    if (Auth::check()) {
-        return redirect()->route(Auth::user()->role->dashboardRouteName());
-    }
-
-    return redirect()->route('login');
-});
+Route::get('/', [HotelCatalogController::class, 'index'])->name('home');
+Route::get('/hotels/{hotel:slug}', [HotelCatalogController::class, 'show'])->name('public.hotels.show');
 
 Route::get('/dashboard', function () {
-    return redirect()->route(Auth::user()->role->dashboardRouteName());
+    return redirect()->route(Auth::user()->role->redirectRouteAfterAuthentication());
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -51,7 +45,7 @@ Route::middleware(['auth', 'verified', 'role:staff'])->prefix('staff')->name('st
 });
 
 Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->name('customer.')->group(function () {
-    Route::get('/dashboard', CustomerDashboardController::class)->name('dashboard');
+    Route::redirect('/', '/customer/bookings')->name('home');
     Route::get('/bookings', [CustomerBookingController::class, 'index'])->name('bookings.index');
     Route::get('/bookings/cancellable', [CustomerBookingController::class, 'cancellable'])->name('bookings.cancellable');
     Route::get('/bookings/rebook', [CustomerBookingController::class, 'rebook'])->name('bookings.rebook');
