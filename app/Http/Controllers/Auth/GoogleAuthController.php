@@ -65,6 +65,6 @@ class GoogleAuthController extends Controller
 
         Auth::login($user, true);
 
-        return redirect()->intended(route($user->role->dashboardRouteName(), absolute: false));
+        return redirect()->intended(route($user->role->redirectRouteAfterAuthentication(), absolute: false));
     }
 }
