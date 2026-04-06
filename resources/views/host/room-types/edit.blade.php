@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-red-800 leading-tight">
+        <h2 class="font-semibold text-xl text-bcom-navy leading-tight">
             {{ __('Sửa loại phòng') }}: {{ $roomType->name }}
         </h2>
     </x-slot>
@@ -8,7 +8,7 @@
     <div class="py-10 px-4 sm:px-6 lg:px-8">
         <div class="max-w-4xl mx-auto space-y-5">
             <x-flash-status />
-            <div class="bg-white border border-red-100 rounded-2xl shadow-md shadow-red-900/5 p-8">
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-md shadow-slate-900/5 p-8">
                 @php
                     $bedFromModel = $roomType->bedLines->map(fn ($l) => [
                         'area_name' => $l->area_name ?? '',
