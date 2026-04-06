@@ -30,7 +30,7 @@
         <div>
             <x-input-label for="province_code" :value="__('Tỉnh/Thành phố')" />
             <select id="province_code" name="province_code" required
-                class="mt-1 block w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white focus:border-red-500 focus:ring-2 focus:ring-red-500/20">
+                class="mt-1 block w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white focus:border-bcom-blue focus:ring-2 focus:ring-bcom-blue/20">
                 <option value="">{{ __('-- Chọn Tỉnh/Thành phố --') }}</option>
                 @foreach ($provinces as $province)
                     <option value="{{ $province->code }}"
@@ -69,7 +69,7 @@
                 class="mt-1 block w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white" />
             @if ($hotel?->thumbnail)
                 <p class="mt-2 text-xs text-gray-500">{{ __('Ảnh hiện tại') }}</p>
-                <img src="{{ $hotel->thumbnailUrl() }}" alt="{{ $hotel->name }}" class="mt-2 h-24 w-36 object-cover rounded-lg border border-red-100">
+                <img src="{{ $hotel->thumbnailUrl() }}" alt="{{ $hotel->name }}" class="mt-2 h-24 w-36 object-cover rounded-lg border border-slate-200">
             @endif
             <x-input-error class="mt-2" :messages="$errors->get('thumbnail')" />
         </div>
@@ -88,11 +88,11 @@
                 <p class="mt-4 text-xs font-medium text-gray-700">{{ __('Ảnh phụ hiện có — đánh dấu để xóa khi lưu') }}</p>
                 <div class="mt-2 flex flex-wrap gap-3">
                     @foreach ($hotel->galleryImages as $gimg)
-                        <label class="flex flex-col gap-1 rounded-lg border border-gray-200 bg-white p-2 text-xs text-gray-600 hover:border-red-200">
+                        <label class="flex flex-col gap-1 rounded-lg border border-gray-200 bg-white p-2 text-xs text-gray-600 hover:border-slate-200">
                             <img src="{{ $gimg->url() }}" alt="" class="h-20 w-28 object-cover rounded-md border border-gray-100">
                             <span class="inline-flex items-center gap-1.5">
                                 <input type="checkbox" name="remove_gallery_image_ids[]" value="{{ $gimg->id }}"
-                                    class="rounded border-gray-300 text-red-600 focus:ring-red-500">
+                                    class="rounded border-gray-300 text-bcom-blue focus:ring-bcom-blue">
                                 {{ __('Xóa') }}
                             </span>
                         </label>
@@ -105,7 +105,7 @@
         <div class="md:col-span-2">
             <x-input-label for="description" :value="__('Mô tả')" />
             <textarea id="description" name="description" rows="5"
-                class="mt-1 block w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-red-500 focus:ring-2 focus:ring-red-500/20">{{ old('description', $hotel?->description) }}</textarea>
+                class="mt-1 block w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-bcom-blue focus:ring-2 focus:ring-bcom-blue/20">{{ old('description', $hotel?->description) }}</textarea>
             <x-input-error class="mt-2" :messages="$errors->get('description')" />
         </div>
 
@@ -114,9 +114,9 @@
             <p class="mt-1 text-xs text-gray-500">{{ __('Chọn các tiện nghi khách sạn có (nếu có).') }}</p>
             <div class="mt-3 grid gap-2 sm:grid-cols-2">
                 @foreach ($amenities as $amenity)
-                    <label class="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 hover:border-red-200 has-[:checked]:border-red-300 has-[:checked]:bg-red-50/40">
+                    <label class="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 hover:border-slate-200 has-[:checked]:border-sky-300 has-[:checked]:bg-sky-50/50">
                         <input type="checkbox" name="amenity_ids[]" value="{{ $amenity->id }}"
-                            class="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                            class="rounded border-gray-300 text-bcom-blue focus:ring-bcom-blue"
                             @checked(in_array($amenity->id, $selectedAmenityIds, true)) />
                         <span>{{ $amenity->name }}</span>
                     </label>
@@ -127,14 +127,14 @@
     </div>
 
     <label class="inline-flex items-center gap-2">
-        <input type="checkbox" name="is_active" value="1" class="rounded border-gray-300 text-red-600 focus:ring-red-500"
+        <input type="checkbox" name="is_active" value="1" class="rounded border-gray-300 text-bcom-blue focus:ring-bcom-blue"
             @checked(old('is_active', $hotel?->is_active ?? true)) />
         <span class="text-sm text-gray-700">{{ __('Đang hoạt động và hiển thị để đặt phòng') }}</span>
     </label>
 
     <div class="flex items-center gap-3">
         <x-primary-button>{{ $submitLabel }}</x-primary-button>
-        <a href="{{ route('host.hotels.index') }}" class="text-sm text-gray-600 hover:text-red-700">{{ __('Quay lại danh sách') }}</a>
+        <a href="{{ route('host.hotels.index') }}" class="text-sm text-gray-600 hover:text-bcom-blue">{{ __('Quay lại danh sách') }}</a>
     </div>
 </form>
 
