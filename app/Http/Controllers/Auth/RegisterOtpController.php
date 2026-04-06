@@ -29,7 +29,7 @@ class RegisterOtpController extends Controller
 
         $user = $otp->verifyRegistrationAndLogin($request->code);
 
-        return redirect()->intended(route($user->role->dashboardRouteName(), absolute: false));
+        return redirect()->intended(route($user->role->redirectRouteAfterAuthentication(), absolute: false));
     }
 
     public function resend(OtpChallengeService $otp): RedirectResponse
