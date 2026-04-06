@@ -14,7 +14,7 @@ class VerifyEmailController extends Controller
      */
     public function __invoke(EmailVerificationRequest $request): RedirectResponse
     {
-        $verifiedHome = route($request->user()->role->dashboardRouteName(), absolute: false).'?verified=1';
+        $verifiedHome = route($request->user()->role->redirectRouteAfterAuthentication(), absolute: false).'?verified=1';
 
         if ($request->user()->hasVerifiedEmail()) {
             return redirect()->intended($verifiedHome);
