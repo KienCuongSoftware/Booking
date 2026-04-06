@@ -13,26 +13,26 @@
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased text-gray-900 bg-red-50/30 min-h-screen">
-        <div class="min-h-screen flex">
+    <body class="min-h-screen bg-slate-100 font-sans antialiased text-gray-900">
+        <div class="flex min-h-screen">
             @include('layouts.sidebar')
 
-            <div class="flex-1 min-w-0">
-                <header class="bg-white border-b border-red-100 shadow-sm">
-                    <div class="px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4">
+            <div class="min-w-0 flex-1">
+                <header class="border-b border-slate-200 bg-white shadow-sm">
+                    <div class="flex items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
                         <div class="min-w-0">
                             @isset($header)
                                 {{ $header }}
                             @else
-                                <h2 class="font-semibold text-xl text-red-800 leading-tight">{{ __('Bảng điều khiển') }}</h2>
+                                <h2 class="text-xl font-semibold leading-tight text-bcom-navy">{{ __('Bảng điều khiển') }}</h2>
                             @endisset
                         </div>
 
                         <div class="flex items-center gap-3">
-                            <a href="{{ route('profile.edit') }}" class="text-sm text-gray-600 hover:text-red-700">{{ __('Hồ sơ') }}</a>
+                            <a href="{{ route('profile.edit') }}" class="text-sm text-gray-600 hover:text-bcom-blue">{{ __('Hồ sơ') }}</a>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
-                                <button type="submit" class="text-sm text-gray-600 hover:text-red-700">{{ __('Đăng xuất') }}</button>
+                                <button type="submit" class="text-sm text-gray-600 hover:text-bcom-blue">{{ __('Đăng xuất') }}</button>
                             </form>
                         </div>
                     </div>
