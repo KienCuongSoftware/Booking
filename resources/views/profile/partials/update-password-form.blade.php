@@ -40,7 +40,7 @@
                     x-show="show"
                     x-transition
                     x-init="setTimeout(() => show = false, 2000)"
-                    class="text-sm text-red-700 font-medium"
+                    class="text-sm text-bcom-blue font-medium"
                 >{{ __('Đã lưu.') }}</p>
             @endif
         </div>

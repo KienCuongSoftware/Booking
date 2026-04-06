@@ -33,13 +33,13 @@
                     <p class="text-sm mt-2 text-gray-800">
                         {{ __('Địa chỉ email của bạn chưa được xác minh.') }}
 
-                        <button form="send-verification" type="submit" class="font-medium text-red-600 hover:text-red-800 ms-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500/30">
+                        <button form="send-verification" type="submit" class="font-medium text-bcom-blue hover:text-bcom-navy ms-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-bcom-blue/30">
                             {{ __('Bấm vào đây để gửi lại email xác minh.') }}
                         </button>
                     </p>
 
                     @if (session('status') === 'verification-link-sent')
-                        <p class="mt-2 font-medium text-sm text-red-800 bg-red-50 border border-red-100 rounded-xl px-3 py-2 inline-block">
+                        <p class="mt-2 font-medium text-sm text-bcom-navy bg-sky-50 border border-slate-200 rounded-xl px-3 py-2 inline-block">
                             {{ __('Liên kết xác minh mới đã được gửi tới email của bạn.') }}
                         </p>
                     @endif
@@ -56,7 +56,7 @@
                     x-show="show"
                     x-transition
                     x-init="setTimeout(() => show = false, 2000)"
-                    class="text-sm text-red-700 font-medium"
+                    class="text-sm text-bcom-blue font-medium"
                 >{{ __('Đã lưu.') }}</p>
             @endif
         </div>
