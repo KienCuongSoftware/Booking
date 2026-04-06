@@ -1,12 +1,12 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-red-800 leading-tight">
+        <h2 class="font-semibold text-xl text-bcom-navy leading-tight">
             {{ __('Xác minh OTP đổi mật khẩu') }}
         </h2>
     </x-slot>
 
     <div class="py-10 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-md mx-auto bg-white border border-red-100 rounded-2xl shadow-md shadow-red-900/5 p-8">
+        <div class="max-w-md mx-auto bg-white border border-slate-200 rounded-2xl shadow-md shadow-slate-900/5 p-8">
             <x-auth-session-status class="mb-4" :status="session('status')" />
 
             <p class="text-sm text-gray-600 mb-2">{{ __('Email') }}: <span class="font-medium text-gray-900">{{ $email }}</span></p>
@@ -32,7 +32,7 @@
 
             <form method="POST" action="{{ route('password.otp.resend') }}" class="mt-6 text-center">
                 @csrf
-                <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-800">
+                <button type="submit" class="text-sm font-medium text-bcom-blue hover:text-bcom-navy">
                     {{ __('Gửi lại mã OTP') }}
                 </button>
             </form>

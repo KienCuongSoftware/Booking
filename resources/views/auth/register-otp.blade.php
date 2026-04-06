@@ -25,7 +25,7 @@
 
     <form method="POST" action="{{ route('register.resend-otp') }}" class="mt-6 text-center">
         @csrf
-        <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500/30 px-2 py-1">
+        <button type="submit" class="text-sm font-medium text-bcom-blue hover:text-bcom-navy rounded-lg focus:outline-none focus:ring-2 focus:ring-bcom-blue/30 px-2 py-1">
             {{ __('Gửi lại mã OTP') }}
         </button>
     </form>

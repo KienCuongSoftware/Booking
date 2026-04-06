@@ -9,7 +9,7 @@
 
     <div class="relative mb-6">
         <div class="absolute inset-0 flex items-center">
-            <span class="w-full border-t border-red-100"></span>
+            <span class="w-full border-t border-slate-200"></span>
         </div>
         <div class="relative flex justify-center text-xs uppercase tracking-wide">
             <span class="bg-white px-3 text-gray-500">{{ __('Hoặc đăng ký email') }}</span>
@@ -53,7 +53,7 @@
         </div>
 
         <div class="flex items-center justify-end mt-6 gap-3 flex-wrap">
-            <a class="text-sm text-red-600 hover:text-red-800 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500/30 px-1" href="{{ route('login') }}">
+            <a class="text-sm text-bcom-blue hover:text-bcom-navy font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-bcom-blue/30 px-1" href="{{ route('login') }}">
                 {{ __('Đã có tài khoản?') }}
             </a>
 

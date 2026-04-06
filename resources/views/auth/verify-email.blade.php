@@ -4,7 +4,7 @@
     </div>
 
     @if (session('status') == 'verification-link-sent')
-        <div class="mb-4 font-medium text-sm text-red-800 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+        <div class="mb-4 font-medium text-sm text-bcom-navy bg-sky-50 border border-slate-200 rounded-xl px-4 py-3">
             {{ __('Liên kết xác minh mới đã được gửi tới email bạn đã đăng ký.') }}
         </div>
     @endif
@@ -23,7 +23,7 @@
         <form method="POST" action="{{ route('logout') }}">
             @csrf
 
-            <button type="submit" class="text-sm font-medium text-gray-600 hover:text-red-700 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-red-500/30">
+            <button type="submit" class="text-sm font-medium text-gray-600 hover:text-bcom-blue rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-bcom-blue/30">
                 {{ __('Đăng xuất') }}
             </button>
         </form>
