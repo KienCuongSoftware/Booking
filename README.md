@@ -1,6 +1,6 @@
 # Booking
 
-A **Laravel 12** accommodation-booking web application: **PHP 8.2**, MySQL (or any Laravel-supported database), **Vite**, **Tailwind CSS**, and **Alpine.js**. **Laravel Breeze**-style authentication with **role-based areas** for **admin**, **host**, **staff**, and **customer**. Hosts manage **hotels** (thumbnail + gallery, provinces, address, pricing, **hotel-level amenities**) and **room types** (capacity, inventory, **floor area (m²)**, bed configuration lines, **room-level amenities**, images). Reference data is **seeded** (provinces, amenities). **Google OAuth** (Socialite), **email OTP** after registration, and **password change** guarded by **OTP** are supported where configured. UI uses a **sidebar shell** for authenticated areas, Tailwind pagination defaults, and flash messages. Suitable as a **course / portfolio** project (e.g. developed on **XAMPP**); public search and live reservations can be extended in future iterations.
+A **Laravel 12** accommodation-booking web application: **PHP 8.2**, MySQL (or any Laravel-supported database), **Vite**, **Tailwind CSS**, and **Alpine.js**. **Laravel Breeze**-style authentication with **role-based areas** for **admin**, **host**, **staff**, and **customer**. Hosts manage **hotels** (thumbnail + gallery, provinces, address, pricing, **hotel-level amenities**) and **room types** (capacity, inventory, **floor area (m²)**, bed configuration lines, **room-level amenities**, images). Reference data is **seeded** (provinces, amenities). **Google OAuth** (Socialite), **email OTP** after registration, and **password change** guarded by **OTP** are supported where configured. UI uses a **sidebar shell** for authenticated areas, Tailwind pagination defaults, and flash messages. **Public catalog** at **`/`** lists **active** hotels (filter by **province**, **keyword**, **sort**); **`/hotels/{slug}`** shows gallery, description, amenities, and **active room types** (no auth). Suitable as a **course / portfolio** project (e.g. developed on **XAMPP**); **date-based booking** can be added next.
 
 **Repository:** [https://github.com/KienCuongSoftware/Booking](https://github.com/KienCuongSoftware/Booking)
 
@@ -91,6 +91,11 @@ Runs `php artisan serve`, `queue:listen`, `pail`, and `npm run dev` via **Concur
 
 ## Features
 
+### Public catalog (guest)
+
+- **`GET /`** — Paginated hotel cards; query params: `q`, `province_code`, `sort` (`newest`, `price_asc`, `price_desc`, `name`).
+- **`GET /hotels/{slug}`** — Hotel detail resolved by **globally unique** `hotels.slug`; inactive hotels return **404**.
+
 ### Authentication & profile
 
 - **Register** → **email OTP verification** flow (`register/verify`, resend throttled).
@@ -98,7 +103,7 @@ Runs `php artisan serve`, `queue:listen`, `pail`, and `npm run dev` via **Concur
 - **Forgot password** / **reset password** (token link).
 - **Email verification** (Breeze-style link flow) and **confirm password** where used.
 - **Profile** — update name, email, password; **password change** can require **OTP** (`password/otp` routes).
-- Root **`/`** redirects authenticated users to the **role dashboard**; guests go to **login**.
+- Root **`/`** is the **public catalog** for everyone; signed-in users still reach their **dashboard** from the header.
 
 ### Host (`auth` + `verified` + `role:host`)
 
@@ -129,11 +134,11 @@ Runs `php artisan serve`, `queue:listen`, `pail`, and `npm run dev` via **Concur
 
 | Area | Paths |
 |------|--------|
-| **HTTP** | `Host\HotelController`, `Host\RoomTypeController`, `Host\BookingController`, `Host\DashboardController`, `Staff\*`, `Customer\*`, `Admin\*`, `ProfileController`, `Auth\*` (session, register, **RegisterOtpController**, **GoogleAuthController**, **PasswordOtpVerificationController**, password reset, email verification) |
+| **HTTP** | `Public\HotelCatalogController` (home + public hotel show), `Host\HotelController`, `Host\RoomTypeController`, `Host\BookingController`, `Host\DashboardController`, `Staff\*`, `Customer\*`, `Admin\*`, `ProfileController`, `Auth\*` (session, register, **RegisterOtpController**, **GoogleAuthController**, **PasswordOtpVerificationController**, password reset, email verification) |
 | **Models** | `User`, `Hotel`, `HotelImage`, `Province`, `Amenity`, `RoomAmenity`, `RoomType`, `RoomTypeBedLine`, `RoomTypeImage`, … |
 | **Form requests** | `App\Http\Requests\Host\StoreHotelRequest`, `UpdateHotelRequest`, `StoreRoomTypeRequest`, `UpdateRoomTypeRequest` |
 | **Support** | `App\Support\PublicDisk` — stable **`/storage/...`** URLs for the public disk |
-| **Views** | `resources/views/layouts/` (`app`, `guest`, `sidebar`, `navigation`), `host/hotels/*`, `host/room-types/*`, `components/` (`flash-status`, `icon/*`, `application-logo`), `auth/*`, role dashboards, `profile/*`, `vendor/pagination/*` |
+| **Views** | `resources/views/layouts/` (`app`, `guest`, `sidebar`, `navigation`), `public/hotels/*`, `components/public-layout.blade.php`, `host/hotels/*`, `host/room-types/*`, `components/` (`flash-status`, `icon/*`, `application-logo`), `auth/*`, role dashboards, `profile/*`, `vendor/pagination/*` |
 | **Routes** | `routes/web.php` — role-prefixed groups (`admin`, `host`, `staff`, `customer`), Breeze routes in `routes/auth.php` |
 
 There is **no** separate `routes/api.php` REST surface in this repository; APIs can be added later (e.g. Laravel Sanctum) if you extend the project.
@@ -159,7 +164,7 @@ php artisan test
 
 | Area | Today | Possible direction |
 |------|--------|-------------------|
-| **Guest storefront** | Login-centric entry; no public hotel catalog | Search, listing pages, maps, availability |
+| **Guest storefront** | Public **hotel list + detail** at `/` and `/hotels/{slug}` | Search facets, maps, availability calendar |
 | **Bookings** | Role-scoped controllers / views | End-to-end reservation, payments, emails |
 | **API** | Web routes only | Sanctum REST or SPA frontend |
 | **i18n** | Mixed EN/VI strings in views | Laravel localization files |

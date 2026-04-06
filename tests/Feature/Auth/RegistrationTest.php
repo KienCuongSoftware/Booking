@@ -40,7 +40,7 @@ class RegistrationTest extends TestCase
         });
 
         $this->post('/register/verify', ['code' => $code])
-            ->assertRedirect(route('customer.dashboard', absolute: false));
+            ->assertRedirect(route('home', absolute: false));
 
         $this->assertAuthenticated();
     }
