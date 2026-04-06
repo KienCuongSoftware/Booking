@@ -31,13 +31,27 @@ enum UserRole: string
         };
     }
 
+    /**
+     * Hub nội bộ theo vai trò. Khách hàng không có dashboard — dùng danh sách đơn đặt.
+     */
     public function dashboardRouteName(): string
     {
         return match ($this) {
             self::Admin => 'admin.dashboard',
             self::Host => 'host.dashboard',
             self::Staff => 'staff.dashboard',
-            self::Customer => 'customer.dashboard',
+            self::Customer => 'customer.bookings.index',
+        };
+    }
+
+    /**
+     * Sau đăng nhập / xác minh email / OAuth: khách hàng về trang chủ, các vai trò khác về dashboard nội bộ.
+     */
+    public function redirectRouteAfterAuthentication(): string
+    {
+        return match ($this) {
+            self::Customer => 'home',
+            default => $this->dashboardRouteName(),
         };
     }
 }
