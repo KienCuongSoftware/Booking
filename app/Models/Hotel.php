@@ -71,6 +71,11 @@ class Hotel extends Model
         return $this->hasMany(HotelImage::class)->orderBy('sort_order');
     }
 
+    public function bookings(): HasMany
+    {
+        return $this->hasMany(Booking::class)->latest('id');
+    }
+
     public function thumbnailUrl(): string
     {
         if (! $this->thumbnail) {
