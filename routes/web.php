@@ -11,6 +11,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Public\HotelCatalogController;
 use App\Http\Controllers\Staff\BookingController as StaffBookingController;
 use App\Http\Controllers\Staff\DashboardController as StaffDashboardController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HotelCatalogController::class, 'index'])->name('home');
@@ -35,6 +36,7 @@ Route::middleware(['auth', 'verified', 'role:host'])->prefix('host')->name('host
     Route::put('/room-types/{roomType}', [HostRoomTypeController::class, 'update'])->name('room-types.update');
     Route::delete('/room-types/{roomType}', [HostRoomTypeController::class, 'destroy'])->name('room-types.destroy');
     Route::get('/bookings', [HostBookingController::class, 'index'])->name('bookings.index');
+    Route::patch('/bookings/{booking}/status', [HostBookingController::class, 'updateStatus'])->name('bookings.update-status');
 });
 
 Route::middleware(['auth', 'verified', 'role:staff'])->prefix('staff')->name('staff.')->group(function () {
@@ -46,6 +48,7 @@ Route::middleware(['auth', 'verified', 'role:staff'])->prefix('staff')->name('st
 
 Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->name('customer.')->group(function () {
     Route::redirect('/', '/customer/bookings')->name('home');
+    Route::post('/hotels/{hotel}/bookings', [CustomerBookingController::class, 'store'])->name('bookings.store');
     Route::get('/bookings', [CustomerBookingController::class, 'index'])->name('bookings.index');
     Route::get('/bookings/cancellable', [CustomerBookingController::class, 'cancellable'])->name('bookings.cancellable');
     Route::get('/bookings/rebook', [CustomerBookingController::class, 'rebook'])->name('bookings.rebook');
