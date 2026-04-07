@@ -177,13 +177,89 @@
             @endif
         </div>
 
+        @auth
+            @if (auth()->user()->role->value === 'customer')
+                <div class="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md shadow-slate-900/5">
+                    <div class="border-b border-slate-200 bg-sky-50/60 px-6 py-4">
+                        <h2 class="text-lg font-semibold text-bcom-navy">{{ __('Đặt phòng ngay') }}</h2>
+                        <p class="mt-1 text-xs text-gray-600">{{ __('Bạn có thể thanh toán tiền mặt hoặc chuyển khoản (MoMo / PayPal).') }}</p>
+                    </div>
+                    <form method="POST" action="{{ route('customer.bookings.store', $hotel) }}" class="grid gap-4 p-6 sm:grid-cols-2">
+                        @csrf
+                        <div class="sm:col-span-2">
+                            <x-input-label for="room_type_id" :value="__('Loại phòng')" />
+                            <select id="room_type_id" name="room_type_id" class="mt-1 block w-full rounded-xl border-gray-200 text-sm focus:border-bcom-blue focus:ring-bcom-blue/20" required>
+                                <option value="">{{ __('Chọn loại phòng') }}</option>
+                                @foreach ($hotel->roomTypes as $rt)
+                                    <option value="{{ $rt->id }}" @selected(old('room_type_id') == $rt->id)>
+                                        {{ $rt->name }} — {{ number_format((float) ($rt->new_price ?? $rt->base_price), 0, ',', '.') }} VND
+                                    </option>
+                                @endforeach
+                            </select>
+                            <x-input-error :messages="$errors->get('room_type_id')" class="mt-2" />
+                        </div>
+
+                        <div>
+                            <x-input-label for="check_in_date" :value="__('Nhận phòng')" />
+                            <x-text-input id="check_in_date" type="date" name="check_in_date" class="mt-1 block w-full" :value="old('check_in_date')" required />
+                            <x-input-error :messages="$errors->get('check_in_date')" class="mt-2" />
+                        </div>
+
+                        <div>
+                            <x-input-label for="check_out_date" :value="__('Trả phòng')" />
+                            <x-text-input id="check_out_date" type="date" name="check_out_date" class="mt-1 block w-full" :value="old('check_out_date')" required />
+                            <x-input-error :messages="$errors->get('check_out_date')" class="mt-2" />
+                        </div>
+
+                        <div>
+                            <x-input-label for="guest_count" :value="__('Số khách')" />
+                            <x-text-input id="guest_count" type="number" min="1" max="10" name="guest_count" class="mt-1 block w-full" :value="old('guest_count', 1)" required />
+                            <x-input-error :messages="$errors->get('guest_count')" class="mt-2" />
+                        </div>
+
+                        <div>
+                            <x-input-label for="payment_method" :value="__('Hình thức thanh toán')" />
+                            <select id="payment_method" name="payment_method" class="mt-1 block w-full rounded-xl border-gray-200 text-sm focus:border-bcom-blue focus:ring-bcom-blue/20" required>
+                                <option value="cash" @selected(old('payment_method', 'cash') === 'cash')>{{ __('Tiền mặt') }}</option>
+                                <option value="bank_transfer" @selected(old('payment_method') === 'bank_transfer')>{{ __('Chuyển khoản') }}</option>
+                            </select>
+                            <x-input-error :messages="$errors->get('payment_method')" class="mt-2" />
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <x-input-label for="payment_provider" :value="__('Cổng thanh toán (khi chọn chuyển khoản)')" />
+                            <select id="payment_provider" name="payment_provider" class="mt-1 block w-full rounded-xl border-gray-200 text-sm focus:border-bcom-blue focus:ring-bcom-blue/20">
+                                <option value="momo" @selected(old('payment_provider', 'momo') === 'momo')>{{ __('MoMo') }}</option>
+                                <option value="paypal" @selected(old('payment_provider') === 'paypal')>{{ __('PayPal') }}</option>
+                            </select>
+                            <x-input-error :messages="$errors->get('payment_provider')" class="mt-2" />
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <x-input-label for="payment_reference" :value="__('Mã giao dịch (nếu có)')" />
+                            <x-text-input id="payment_reference" type="text" name="payment_reference" class="mt-1 block w-full" :value="old('payment_reference')" />
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <x-input-label for="customer_note" :value="__('Ghi chú thêm')" />
+                            <textarea id="customer_note" name="customer_note" rows="3" class="mt-1 block w-full rounded-xl border-gray-200 text-sm focus:border-bcom-blue focus:ring-bcom-blue/20">{{ old('customer_note') }}</textarea>
+                        </div>
+
+                        <div class="sm:col-span-2 flex justify-end">
+                            <x-primary-button>{{ __('Gửi yêu cầu đặt phòng') }}</x-primary-button>
+                        </div>
+                    </form>
+                </div>
+            @endif
+        @endauth
+
         <div class="mt-8 flex flex-wrap gap-3">
             <a href="{{ route('home') }}" class="inline-flex items-center rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50">
                 ← {{ __('Quay lại danh sách') }}
             </a>
             @guest
                 <a href="{{ route('login') }}" class="inline-flex items-center rounded-xl bg-bcom-blue px-4 py-2.5 text-sm font-semibold text-white hover:bg-bcom-blue/90">
-                    {{ __('Đăng nhập để đặt phòng (sắp có)') }}
+                    {{ __('Đăng nhập để đặt phòng') }}
                 </a>
             @endguest
         </div>
