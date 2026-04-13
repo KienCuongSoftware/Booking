@@ -191,7 +191,7 @@
                             <select id="room_type_id" name="room_type_id" class="mt-1 block w-full rounded-xl border-gray-200 text-sm focus:border-bcom-blue focus:ring-bcom-blue/20" required>
                                 <option value="">{{ __('Chọn loại phòng') }}</option>
                                 @foreach ($hotel->roomTypes as $rt)
-                                    <option value="{{ $rt->id }}" @selected(old('room_type_id') == $rt->id)>
+                                    <option value="{{ $rt->id }}" @selected(old('room_type_id', request('room_type_id')) == $rt->id)>
                                         {{ $rt->name }} — {{ number_format((float) ($rt->new_price ?? $rt->base_price), 0, ',', '.') }} VND
                                     </option>
                                 @endforeach
@@ -201,19 +201,19 @@
 
                         <div>
                             <x-input-label for="check_in_date" :value="__('Nhận phòng')" />
-                            <x-text-input id="check_in_date" type="date" name="check_in_date" class="mt-1 block w-full" :value="old('check_in_date')" required />
+                            <x-text-input id="check_in_date" type="date" name="check_in_date" class="mt-1 block w-full" :value="old('check_in_date', request('check_in_date'))" required />
                             <x-input-error :messages="$errors->get('check_in_date')" class="mt-2" />
                         </div>
 
                         <div>
                             <x-input-label for="check_out_date" :value="__('Trả phòng')" />
-                            <x-text-input id="check_out_date" type="date" name="check_out_date" class="mt-1 block w-full" :value="old('check_out_date')" required />
+                            <x-text-input id="check_out_date" type="date" name="check_out_date" class="mt-1 block w-full" :value="old('check_out_date', request('check_out_date'))" required />
                             <x-input-error :messages="$errors->get('check_out_date')" class="mt-2" />
                         </div>
 
                         <div>
                             <x-input-label for="guest_count" :value="__('Số khách')" />
-                            <x-text-input id="guest_count" type="number" min="1" max="10" name="guest_count" class="mt-1 block w-full" :value="old('guest_count', 1)" required />
+                            <x-text-input id="guest_count" type="number" min="1" max="10" name="guest_count" class="mt-1 block w-full" :value="old('guest_count', request('guest_count', 1))" required />
                             <x-input-error :messages="$errors->get('guest_count')" class="mt-2" />
                         </div>
 
