@@ -6,12 +6,19 @@ use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
+use App\Services\BookingLifecycleService;
+use App\Services\BookingNotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class BookingController extends Controller
 {
+    public function __construct(
+        private readonly BookingLifecycleService $bookingLifecycleService,
+        private readonly BookingNotificationService $bookingNotificationService,
+    ) {}
+
     public function index(Request $request): View
     {
         $query = Booking::query()
@@ -39,14 +46,20 @@ class BookingController extends Controller
             'mark_paid' => ['nullable', 'boolean'],
         ]);
 
-        $booking->status = BookingStatus::from($validated['status']);
-        $booking->host_note = $validated['host_note'] ?: $booking->host_note;
+        $originalStatus = $booking->status;
+        $booking->host_note = ($validated['host_note'] ?? null) ?: $booking->host_note;
 
         if (($validated['mark_paid'] ?? false) && $booking->payment_status !== BookingPaymentStatus::Paid) {
             $booking->payment_status = BookingPaymentStatus::Paid;
         }
 
         $booking->save();
+        $booking = $this->bookingLifecycleService->transition(
+            $booking,
+            BookingStatus::from($validated['status']),
+            $request->user(),
+        );
+        $this->bookingNotificationService->sendStatusChanged($booking, $originalStatus);
 
         return back()->with('status', __('Đã cập nhật trạng thái đơn đặt.'));
     }

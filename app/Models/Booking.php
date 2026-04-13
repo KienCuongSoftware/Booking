@@ -24,12 +24,24 @@ class Booking extends Model
         'total_price',
         'currency',
         'status',
+        'confirmed_at',
+        'cancelled_at',
+        'completed_at',
+        'status_changed_at',
+        'status_changed_by',
+        'cancelled_by',
         'payment_method',
         'payment_provider',
         'payment_status',
         'payment_reference',
         'customer_note',
         'host_note',
+        'cancel_reason',
+        'cancellation_fee_amount',
+        'refund_amount',
+        'cancellation_policy_snapshot',
+        'reminder_sent_at',
+        'follow_up_sent_at',
     ];
 
     protected function casts(): array
@@ -42,9 +54,20 @@ class Booking extends Model
             'unit_price' => 'decimal:2',
             'total_price' => 'decimal:2',
             'status' => BookingStatus::class,
+            'confirmed_at' => 'datetime',
+            'cancelled_at' => 'datetime',
+            'completed_at' => 'datetime',
+            'status_changed_at' => 'datetime',
+            'status_changed_by' => 'integer',
+            'cancelled_by' => 'integer',
             'payment_method' => BookingPaymentMethod::class,
             'payment_provider' => BookingPaymentProvider::class,
             'payment_status' => BookingPaymentStatus::class,
+            'cancellation_fee_amount' => 'decimal:2',
+            'refund_amount' => 'decimal:2',
+            'cancellation_policy_snapshot' => 'array',
+            'reminder_sent_at' => 'datetime',
+            'follow_up_sent_at' => 'datetime',
         ];
     }
 
@@ -61,5 +84,15 @@ class Booking extends Model
     public function roomType(): BelongsTo
     {
         return $this->belongsTo(RoomType::class);
+    }
+
+    public function statusChangedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'status_changed_by');
+    }
+
+    public function cancelledBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cancelled_by');
     }
 }

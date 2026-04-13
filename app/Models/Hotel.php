@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Support\PublicDisk;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
 class Hotel extends Model
@@ -74,6 +75,11 @@ class Hotel extends Model
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class)->latest('id');
+    }
+
+    public function cancellationPolicy(): HasOne
+    {
+        return $this->hasOne(CancellationPolicy::class);
     }
 
     public function thumbnailUrl(): string

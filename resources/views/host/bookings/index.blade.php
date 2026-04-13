@@ -80,15 +80,24 @@
                                                 @csrf
                                                 @method('PATCH')
                                                 <select name="status" class="w-full rounded-lg border-gray-200 text-xs focus:border-bcom-blue focus:ring-bcom-blue/20">
-                                                    <option value="confirmed">{{ __('Xác nhận') }}</option>
-                                                    <option value="completed">{{ __('Hoàn tất') }}</option>
-                                                    <option value="cancelled">{{ __('Từ chối / Hủy') }}</option>
+                                                    @if ($booking->status->value === 'pending')
+                                                        <option value="confirmed">{{ __('Xác nhận') }}</option>
+                                                        <option value="cancelled">{{ __('Từ chối / Hủy') }}</option>
+                                                    @elseif ($booking->status->value === 'confirmed')
+                                                        <option value="completed">{{ __('Hoàn tất') }}</option>
+                                                        <option value="cancelled">{{ __('Hủy đơn') }}</option>
+                                                    @else
+                                                        <option value="" selected disabled>{{ __('Trạng thái hiện tại không thể cập nhật') }}</option>
+                                                    @endif
                                                 </select>
                                                 <label class="inline-flex items-center gap-2 text-xs text-gray-600">
                                                     <input type="checkbox" name="mark_paid" value="1" class="rounded border-gray-300 text-bcom-blue focus:ring-bcom-blue">
                                                     {{ __('Đánh dấu đã thanh toán') }}
                                                 </label>
-                                                <button type="submit" class="inline-flex items-center rounded-lg bg-bcom-blue px-3 py-1.5 text-xs font-semibold text-white hover:bg-bcom-blue/90">
+                                                <button
+                                                    type="submit"
+                                                    @disabled(in_array($booking->status->value, ['cancelled', 'completed'], true))
+                                                    class="inline-flex items-center rounded-lg bg-bcom-blue px-3 py-1.5 text-xs font-semibold text-white hover:bg-bcom-blue/90 disabled:cursor-not-allowed disabled:bg-slate-300">
                                                     {{ __('Cập nhật') }}
                                                 </button>
                                             </form>
