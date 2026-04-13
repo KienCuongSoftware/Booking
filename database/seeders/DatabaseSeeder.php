@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             AmenitySeeder::class,
             RoomAmenitySeeder::class,
             UserSeeder::class,
+            BookingSeeder::class,
         ]);
     }
 }

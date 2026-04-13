@@ -9,15 +9,31 @@
         <div class="mx-auto max-w-4xl min-w-0 space-y-6">
             <x-flash-status />
 
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-900/5 sm:p-8">
-                <p class="text-sm leading-relaxed text-gray-700">
-                    {{ __('Các đơn đủ điều kiện hủy theo chính sách (ví dụ trước giờ nhận phòng) sẽ hiển thị tại đây. Luồng hủy sẽ được kết nối khi đặt phòng theo ngày hoạt động.') }}
-                </p>
-            </div>
-
-            <x-customer.empty-state
-                :title="__('Không có đơn nào đang chờ hủy')"
-                :description="__('Hiện chưa có đơn đặt nào trong khoảng thời gian cho phép hủy.')" />
+            @if ($bookings->isEmpty())
+                <x-customer.empty-state
+                    :title="__('Không có đơn nào đang chờ hủy')"
+                    :description="__('Hiện chưa có đơn đặt nào trong khoảng thời gian cho phép hủy.')" />
+            @else
+                <div class="grid gap-4">
+                    @foreach ($bookings as $booking)
+                        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-900/5">
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <p class="text-sm text-gray-500">{{ $booking->booking_code }}</p>
+                                    <p class="font-semibold text-gray-900">{{ $booking->hotel->name }}</p>
+                                    <p class="mt-1 text-sm text-gray-600">{{ $booking->roomType->name }}</p>
+                                    <p class="mt-1 text-xs text-gray-500">{{ $booking->check_in_date->format('d/m/Y') }} → {{ $booking->check_out_date->format('d/m/Y') }} ({{ $booking->nights }} {{ __('đêm') }})</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-semibold text-bcom-blue">{{ number_format((float) $booking->total_price, 0, ',', '.') }} {{ $booking->currency }}</p>
+                                    <p class="mt-1 text-xs text-gray-500">{{ $booking->payment_method->labelVi() }} · {{ $booking->payment_status->labelVi() }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+                <div>{{ $bookings->links() }}</div>
+            @endif
         </div>
     </div>
 </x-app-layout>
