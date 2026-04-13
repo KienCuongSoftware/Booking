@@ -57,6 +57,29 @@ class BookingSeeder extends Seeder
                 ? (random_int(0, 1) === 0 ? BookingPaymentProvider::Momo : BookingPaymentProvider::Paypal)
                 : null;
             $status = $statusPool[array_rand($statusPool)];
+            $confirmedAt = null;
+            $cancelledAt = null;
+            $completedAt = null;
+            $cancelReason = null;
+            $cancellationFeeAmount = null;
+            $refundAmount = null;
+            $cancellationPolicySnapshot = null;
+
+            if ($status === BookingStatus::Confirmed) {
+                $confirmedAt = $checkIn->copy()->subDays(random_int(2, 5));
+            } elseif ($status === BookingStatus::Cancelled) {
+                $cancelledAt = $checkIn->copy()->subDays(random_int(1, 3));
+                $cancelReason = 'Seeded cancellation';
+                $cancellationFeeAmount = round(($unitPrice * $nights) * 0.3, 2);
+                $refundAmount = round(($unitPrice * $nights) - $cancellationFeeAmount, 2);
+                $cancellationPolicySnapshot = [
+                    'policy_name' => 'Chính sách tiêu chuẩn',
+                    'fee_percent' => 30,
+                ];
+            } elseif ($status === BookingStatus::Completed) {
+                $confirmedAt = $checkIn->copy()->subDays(random_int(2, 6));
+                $completedAt = $checkOut->copy()->addDay();
+            }
 
             $paymentStatus = match ($status) {
                 BookingStatus::Cancelled => BookingPaymentStatus::Failed,
@@ -86,6 +109,16 @@ class BookingSeeder extends Seeder
                     'payment_reference' => $paymentProvider ? strtoupper($paymentProvider->value).'-'.Str::upper(Str::random(10)) : null,
                     'customer_note' => null,
                     'host_note' => null,
+                    'confirmed_at' => $confirmedAt,
+                    'cancelled_at' => $cancelledAt,
+                    'completed_at' => $completedAt,
+                    'status_changed_at' => $cancelledAt ?? $completedAt ?? $confirmedAt ?? now(),
+                    'status_changed_by' => $customer->id,
+                    'cancelled_by' => $cancelledAt ? $customer->id : null,
+                    'cancel_reason' => $cancelReason,
+                    'cancellation_fee_amount' => $cancellationFeeAmount,
+                    'refund_amount' => $refundAmount,
+                    'cancellation_policy_snapshot' => $cancellationPolicySnapshot,
                 ]
             );
 

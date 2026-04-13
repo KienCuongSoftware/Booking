@@ -9,13 +9,25 @@ use App\Enums\BookingStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Hotel;
+use App\Services\BookingLifecycleService;
+use App\Services\BookingNotificationService;
+use App\Services\CancellationFeeService;
+use App\Services\RebookSuggestionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class BookingController extends Controller
 {
+    public function __construct(
+        private readonly BookingLifecycleService $bookingLifecycleService,
+        private readonly CancellationFeeService $cancellationFeeService,
+        private readonly RebookSuggestionService $rebookSuggestionService,
+        private readonly BookingNotificationService $bookingNotificationService,
+    ) {}
+
     public function index(Request $request): View
     {
         $bookings = $request->user()
@@ -32,12 +44,17 @@ class BookingController extends Controller
         $bookings = $request->user()
             ->bookings()
             ->whereIn('status', [BookingStatus::Pending->value, BookingStatus::Confirmed->value])
-            ->whereDate('check_in_date', '>', now()->addDay()->toDateString())
+            ->whereDate('check_in_date', '>', now()->toDateString())
             ->with(['hotel:id,name,slug', 'roomType:id,name'])
             ->latest('id')
             ->paginate(10);
 
-        return view('customer.bookings.cancellable', compact('bookings'));
+        $cancellationPreviews = [];
+        foreach ($bookings as $booking) {
+            $cancellationPreviews[$booking->id] = $this->cancellationFeeService->calculate($booking);
+        }
+
+        return view('customer.bookings.cancellable', compact('bookings', 'cancellationPreviews'));
     }
 
     public function rebook(Request $request): View
@@ -49,7 +66,46 @@ class BookingController extends Controller
             ->latest('id')
             ->paginate(10);
 
-        return view('customer.bookings.rebook', compact('bookings'));
+        $rebookSuggestions = [];
+        foreach ($bookings as $booking) {
+            $rebookSuggestions[$booking->id] = $this->rebookSuggestionService->suggestDates($booking)->all();
+        }
+
+        return view('customer.bookings.rebook', compact('bookings', 'rebookSuggestions'));
+    }
+
+    public function cancel(Request $request, Booking $booking): RedirectResponse
+    {
+        abort_unless($booking->customer_id === $request->user()->id, 403);
+
+        $validated = $request->validate([
+            'cancel_reason' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        if ($booking->check_in_date->isToday() || $booking->check_in_date->isPast()) {
+            throw ValidationException::withMessages([
+                'cancel_reason' => [__('Đã quá thời hạn hủy đơn cho lịch nhận phòng này.')],
+            ]);
+        }
+
+        $fee = $this->cancellationFeeService->calculate($booking);
+        $originalStatus = $booking->status;
+        $booking = $this->bookingLifecycleService->transition(
+            $booking,
+            BookingStatus::Cancelled,
+            $request->user(),
+            [
+                'cancel_reason' => ($validated['cancel_reason'] ?? null) ?: null,
+                'cancellation_fee_amount' => $fee['fee_amount'],
+                'refund_amount' => $fee['refund_amount'],
+                'cancellation_policy_snapshot' => $fee['policy_snapshot'],
+            ],
+        );
+        $this->bookingNotificationService->sendStatusChanged($booking, $originalStatus);
+
+        return redirect()
+            ->route('customer.bookings.cancellable')
+            ->with('status', __('Đã hủy đơn đặt. Phí hủy áp dụng: :percent%.', ['percent' => rtrim(rtrim(number_format($fee['fee_percent'], 2, '.', ''), '0'), '.')]));
     }
 
     public function store(Request $request, Hotel $hotel): RedirectResponse
@@ -90,7 +146,7 @@ class BookingController extends Controller
             ? BookingPaymentStatus::Unpaid
             : BookingPaymentStatus::Pending;
 
-        Booking::query()->create([
+        $booking = Booking::query()->create([
             'booking_code' => 'BK'.strtoupper(Str::random(8)),
             'customer_id' => $request->user()->id,
             'hotel_id' => $hotel->id,
@@ -105,9 +161,12 @@ class BookingController extends Controller
             'payment_method' => $paymentMethod,
             'payment_provider' => $paymentProvider,
             'payment_status' => $paymentStatus,
-            'payment_reference' => $validated['payment_reference'] ?: null,
-            'customer_note' => $validated['customer_note'] ?: null,
+            'payment_reference' => ($validated['payment_reference'] ?? null) ?: null,
+            'customer_note' => ($validated['customer_note'] ?? null) ?: null,
+            'status_changed_at' => now(),
+            'status_changed_by' => $request->user()->id,
         ]);
+        $this->bookingNotificationService->sendCreated($booking);
 
         return redirect()
             ->route('customer.bookings.index')

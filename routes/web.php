@@ -51,6 +51,7 @@ Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->na
     Route::post('/hotels/{hotel}/bookings', [CustomerBookingController::class, 'store'])->name('bookings.store');
     Route::get('/bookings', [CustomerBookingController::class, 'index'])->name('bookings.index');
     Route::get('/bookings/cancellable', [CustomerBookingController::class, 'cancellable'])->name('bookings.cancellable');
+    Route::patch('/bookings/{booking}/cancel', [CustomerBookingController::class, 'cancel'])->name('bookings.cancel');
     Route::get('/bookings/rebook', [CustomerBookingController::class, 'rebook'])->name('bookings.rebook');
 });
 
