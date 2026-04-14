@@ -9,12 +9,14 @@ use App\Enums\BookingStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Hotel;
+use App\Services\BookingLedgerService;
 use App\Services\BookingLifecycleService;
 use App\Services\BookingNotificationService;
 use App\Services\CancellationFeeService;
 use App\Services\RebookSuggestionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -23,6 +25,7 @@ class BookingController extends Controller
 {
     public function __construct(
         private readonly BookingLifecycleService $bookingLifecycleService,
+        private readonly BookingLedgerService $bookingLedgerService,
         private readonly CancellationFeeService $cancellationFeeService,
         private readonly RebookSuggestionService $rebookSuggestionService,
         private readonly BookingNotificationService $bookingNotificationService,
@@ -32,7 +35,7 @@ class BookingController extends Controller
     {
         $bookings = $request->user()
             ->bookings()
-            ->with(['hotel:id,name,slug', 'roomType:id,name'])
+            ->with(['hotel:id,name,slug', 'roomType:id,name', 'statusEvents.actor:id,name'])
             ->latest('id')
             ->paginate(10);
 
@@ -61,7 +64,7 @@ class BookingController extends Controller
     {
         $bookings = $request->user()
             ->bookings()
-            ->whereIn('status', [BookingStatus::Cancelled->value, BookingStatus::Completed->value])
+            ->whereIn('status', [BookingStatus::Cancelled->value, BookingStatus::NoShow->value, BookingStatus::Completed->value])
             ->with(['hotel:id,name,slug', 'roomType:id,name'])
             ->latest('id')
             ->paginate(10);
@@ -99,8 +102,10 @@ class BookingController extends Controller
                 'cancellation_fee_amount' => $fee['fee_amount'],
                 'refund_amount' => $fee['refund_amount'],
                 'cancellation_policy_snapshot' => $fee['policy_snapshot'],
+                'event_note' => __('Khách hủy đơn trước hạn.'),
             ],
         );
+        $this->bookingLedgerService->recordCancellationFees($booking, $request->user(), 'cancelled');
         $this->bookingNotificationService->sendStatusChanged($booking, $originalStatus);
 
         return redirect()
@@ -121,51 +126,79 @@ class BookingController extends Controller
             'customer_note' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $roomType = $hotel->roomTypes()
-            ->where('is_active', true)
-            ->where('id', $validated['room_type_id'])
-            ->firstOrFail();
-
-        if ((int) $validated['guest_count'] > $roomType->max_occupancy) {
-            return back()->withErrors([
-                'guest_count' => __('Số khách vượt quá sức chứa của loại phòng đã chọn.'),
-            ])->withInput();
-        }
-
         $checkIn = \Illuminate\Support\Carbon::parse($validated['check_in_date']);
         $checkOut = \Illuminate\Support\Carbon::parse($validated['check_out_date']);
         $nights = $checkIn->diffInDays($checkOut);
-        $unitPrice = (float) ($roomType->new_price ?? $roomType->base_price);
-        $totalPrice = $unitPrice * $nights;
+        $booking = DB::transaction(function () use ($hotel, $validated, $request, $checkIn, $checkOut, $nights) {
+            $roomType = $hotel->roomTypes()
+                ->where('is_active', true)
+                ->where('id', $validated['room_type_id'])
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        $paymentMethod = BookingPaymentMethod::from($validated['payment_method']);
-        $paymentProvider = $paymentMethod === BookingPaymentMethod::BankTransfer
-            ? BookingPaymentProvider::from($validated['payment_provider'] ?? 'momo')
-            : null;
-        $paymentStatus = $paymentMethod === BookingPaymentMethod::Cash
-            ? BookingPaymentStatus::Unpaid
-            : BookingPaymentStatus::Pending;
+            if ((int) $validated['guest_count'] > $roomType->max_occupancy) {
+                throw ValidationException::withMessages([
+                    'guest_count' => __('Số khách vượt quá sức chứa của loại phòng đã chọn.'),
+                ]);
+            }
 
-        $booking = Booking::query()->create([
-            'booking_code' => 'BK'.strtoupper(Str::random(8)),
-            'customer_id' => $request->user()->id,
-            'hotel_id' => $hotel->id,
-            'room_type_id' => $roomType->id,
-            'check_in_date' => $checkIn->toDateString(),
-            'check_out_date' => $checkOut->toDateString(),
-            'guest_count' => (int) $validated['guest_count'],
-            'nights' => $nights,
-            'unit_price' => $unitPrice,
-            'total_price' => $totalPrice,
-            'status' => BookingStatus::Pending,
-            'payment_method' => $paymentMethod,
-            'payment_provider' => $paymentProvider,
-            'payment_status' => $paymentStatus,
-            'payment_reference' => ($validated['payment_reference'] ?? null) ?: null,
-            'customer_note' => ($validated['customer_note'] ?? null) ?: null,
-            'status_changed_at' => now(),
-            'status_changed_by' => $request->user()->id,
-        ]);
+            $reservedCount = Booking::query()
+                ->where('room_type_id', $roomType->id)
+                ->whereIn('status', [BookingStatus::Pending->value, BookingStatus::Confirmed->value])
+                ->whereDate('check_in_date', '<', $checkOut->toDateString())
+                ->whereDate('check_out_date', '>', $checkIn->toDateString())
+                ->lockForUpdate()
+                ->count();
+
+            if ($reservedCount >= $roomType->quantity) {
+                throw ValidationException::withMessages([
+                    'room_type_id' => __('Loại phòng này đã hết chỗ trong khoảng ngày bạn chọn.'),
+                ]);
+            }
+
+            $unitPrice = (float) ($roomType->new_price ?? $roomType->base_price);
+            $totalPrice = $unitPrice * $nights;
+            $paymentMethod = BookingPaymentMethod::from($validated['payment_method']);
+            $paymentProvider = $paymentMethod === BookingPaymentMethod::BankTransfer
+                ? BookingPaymentProvider::from($validated['payment_provider'] ?? 'momo')
+                : null;
+            $paymentStatus = $paymentMethod === BookingPaymentMethod::Cash
+                ? BookingPaymentStatus::Unpaid
+                : BookingPaymentStatus::Pending;
+
+            $booking = Booking::query()->create([
+                'booking_code' => 'BK'.strtoupper(Str::random(8)),
+                'customer_id' => $request->user()->id,
+                'hotel_id' => $hotel->id,
+                'room_type_id' => $roomType->id,
+                'check_in_date' => $checkIn->toDateString(),
+                'check_out_date' => $checkOut->toDateString(),
+                'guest_count' => (int) $validated['guest_count'],
+                'nights' => $nights,
+                'unit_price' => $unitPrice,
+                'total_price' => $totalPrice,
+                'status' => BookingStatus::Pending,
+                'payment_method' => $paymentMethod,
+                'payment_provider' => $paymentProvider,
+                'payment_status' => $paymentStatus,
+                'payment_reference' => ($validated['payment_reference'] ?? null) ?: null,
+                'customer_note' => ($validated['customer_note'] ?? null) ?: null,
+                'status_changed_at' => now(),
+                'status_changed_by' => $request->user()->id,
+            ]);
+
+            $this->bookingLifecycleService->recordStatusEvent(
+                $booking,
+                null,
+                BookingStatus::Pending,
+                $request->user(),
+                ['event_note' => __('Tạo mới đơn đặt phòng.')],
+            );
+            $this->bookingLedgerService->recordChargeCreated($booking, $request->user());
+
+            return $booking;
+        });
+
         $this->bookingNotificationService->sendCreated($booking);
 
         return redirect()

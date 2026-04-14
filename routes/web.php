@@ -4,6 +4,8 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\SystemOverviewController as AdminSystemOverviewController;
 use App\Http\Controllers\Customer\BookingController as CustomerBookingController;
 use App\Http\Controllers\Host\BookingController as HostBookingController;
+use App\Http\Controllers\Host\AvailabilityController as HostAvailabilityController;
+use App\Http\Controllers\Host\CancellationPolicyController as HostCancellationPolicyController;
 use App\Http\Controllers\Host\DashboardController as HostDashboardController;
 use App\Http\Controllers\Host\HotelController as HostHotelController;
 use App\Http\Controllers\Host\RoomTypeController as HostRoomTypeController;
@@ -37,6 +39,10 @@ Route::middleware(['auth', 'verified', 'role:host'])->prefix('host')->name('host
     Route::delete('/room-types/{roomType}', [HostRoomTypeController::class, 'destroy'])->name('room-types.destroy');
     Route::get('/bookings', [HostBookingController::class, 'index'])->name('bookings.index');
     Route::patch('/bookings/{booking}/status', [HostBookingController::class, 'updateStatus'])->name('bookings.update-status');
+    Route::patch('/bookings/{booking}/refunds/{transaction}', [HostBookingController::class, 'updateRefundStatus'])->name('bookings.update-refund-status');
+    Route::get('/availability', [HostAvailabilityController::class, 'index'])->name('availability.index');
+    Route::get('/cancellation-policy', [HostCancellationPolicyController::class, 'edit'])->name('cancellation-policy.edit');
+    Route::put('/cancellation-policy', [HostCancellationPolicyController::class, 'update'])->name('cancellation-policy.update');
 });
 
 Route::middleware(['auth', 'verified', 'role:staff'])->prefix('staff')->name('staff.')->group(function () {

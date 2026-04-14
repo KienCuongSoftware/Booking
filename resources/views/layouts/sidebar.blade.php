@@ -42,6 +42,14 @@
                 class="block rounded-lg px-3 py-2 {{ request()->routeIs('host.bookings.*') ? 'bg-white/20 font-semibold text-white' : 'text-sky-100 hover:bg-white/10 hover:text-white' }}">
                 {{ __('Đơn đặt') }}
             </a>
+            <a href="{{ route('host.availability.index') }}"
+                class="block rounded-lg px-3 py-2 {{ request()->routeIs('host.availability.*') ? 'bg-white/20 font-semibold text-white' : 'text-sky-100 hover:bg-white/10 hover:text-white' }}">
+                {{ __('Lịch khả dụng') }}
+            </a>
+            <a href="{{ route('host.cancellation-policy.edit') }}"
+                class="block rounded-lg px-3 py-2 {{ request()->routeIs('host.cancellation-policy.*') ? 'bg-white/20 font-semibold text-white' : 'text-sky-100 hover:bg-white/10 hover:text-white' }}">
+                {{ __('Chính sách hủy') }}
+            </a>
         @endif
 
         @if (auth()->user()->role->value === 'staff')

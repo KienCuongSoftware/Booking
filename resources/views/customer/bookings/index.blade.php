@@ -49,9 +49,20 @@
                                             </p>
                                         </td>
                                         <td class="px-4 py-4">
-                                            <span class="inline-flex rounded-full border px-2 py-0.5 text-xs {{ $booking->status->value === 'cancelled' ? 'border-red-200 bg-red-50 text-red-700' : ($booking->status->value === 'completed' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-sky-200 bg-sky-50 text-bcom-blue') }}">
+                                            <span class="inline-flex rounded-full border px-2 py-0.5 text-xs {{ in_array($booking->status->value, ['cancelled', 'no_show'], true) ? 'border-red-200 bg-red-50 text-red-700' : ($booking->status->value === 'completed' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-sky-200 bg-sky-50 text-bcom-blue') }}">
                                                 {{ $booking->status->labelVi() }}
                                             </span>
+                                            @if ($booking->statusEvents->isNotEmpty())
+                                                <div class="mt-3 space-y-1">
+                                                    @foreach ($booking->statusEvents->take(3) as $event)
+                                                        <p class="text-xs text-gray-500">
+                                                            {{ \Illuminate\Support\Carbon::parse($event->changed_at)->format('d/m H:i') }}
+                                                            · {{ \App\Enums\BookingStatus::from($event->to_status)->labelVi() }}
+                                                            · {{ $event->actor?->name ?? __('Hệ thống') }}
+                                                        </p>
+                                                    @endforeach
+                                                </div>
+                                            @endif
                                         </td>
                                         <td class="px-4 py-4 text-right font-semibold text-bcom-blue">
                                             {{ number_format((float) $booking->total_price, 0, ',', '.') }} {{ $booking->currency }}

@@ -18,6 +18,7 @@
                         <option value="confirmed" @selected(request('status') === 'confirmed')>{{ __('Đã xác nhận') }}</option>
                         <option value="completed" @selected(request('status') === 'completed')>{{ __('Hoàn tất') }}</option>
                         <option value="cancelled" @selected(request('status') === 'cancelled')>{{ __('Đã hủy') }}</option>
+                        <option value="no_show" @selected(request('status') === 'no_show')>{{ __('Không đến') }}</option>
                     </select>
                 </div>
                 <x-primary-button>{{ __('Lọc') }}</x-primary-button>
@@ -71,9 +72,14 @@
                                             @endif
                                         </td>
                                         <td class="px-4 py-4">
-                                            <span class="inline-flex rounded-full border px-2 py-0.5 text-xs {{ $booking->status->value === 'cancelled' ? 'border-red-200 bg-red-50 text-red-700' : ($booking->status->value === 'completed' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-sky-200 bg-sky-50 text-bcom-blue') }}">
+                                            <span class="inline-flex rounded-full border px-2 py-0.5 text-xs {{ in_array($booking->status->value, ['cancelled', 'no_show'], true) ? 'border-red-200 bg-red-50 text-red-700' : ($booking->status->value === 'completed' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-sky-200 bg-sky-50 text-bcom-blue') }}">
                                                 {{ $booking->status->labelVi() }}
                                             </span>
+                                            @if ($booking->transactions->isNotEmpty())
+                                                <p class="mt-2 text-xs text-gray-500">
+                                                    {{ __('Ledger') }}: {{ $booking->transactions->count() }} {{ __('giao dịch') }}
+                                                </p>
+                                            @endif
                                         </td>
                                         <td class="px-4 py-4">
                                             <form method="POST" action="{{ route('host.bookings.update-status', $booking) }}" class="space-y-2">
@@ -86,6 +92,7 @@
                                                     @elseif ($booking->status->value === 'confirmed')
                                                         <option value="completed">{{ __('Hoàn tất') }}</option>
                                                         <option value="cancelled">{{ __('Hủy đơn') }}</option>
+                                                        <option value="no_show">{{ __('Không đến (No-show)') }}</option>
                                                     @else
                                                         <option value="" selected disabled>{{ __('Trạng thái hiện tại không thể cập nhật') }}</option>
                                                     @endif
@@ -96,11 +103,39 @@
                                                 </label>
                                                 <button
                                                     type="submit"
-                                                    @disabled(in_array($booking->status->value, ['cancelled', 'completed'], true))
+                                                    @disabled(in_array($booking->status->value, ['cancelled', 'completed', 'no_show'], true))
                                                     class="inline-flex items-center rounded-lg bg-bcom-blue px-3 py-1.5 text-xs font-semibold text-white hover:bg-bcom-blue/90 disabled:cursor-not-allowed disabled:bg-slate-300">
                                                     {{ __('Cập nhật') }}
                                                 </button>
                                             </form>
+                                            @php
+                                                $refunds = $booking->transactions->where('type', 'refund');
+                                            @endphp
+                                            @if ($refunds->isNotEmpty())
+                                                <div class="mt-3 space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-2">
+                                                    <p class="text-xs font-semibold text-amber-800">{{ __('Refund workflow') }}</p>
+                                                    @foreach ($refunds as $refundTx)
+                                                        <form method="POST" action="{{ route('host.bookings.update-refund-status', [$booking, $refundTx]) }}" class="space-y-1">
+                                                            @csrf
+                                                            @method('PATCH')
+                                                            <p class="text-xs text-amber-900">
+                                                                {{ __('Số tiền') }}: {{ number_format((float) $refundTx->amount, 0, ',', '.') }} {{ $refundTx->currency }}
+                                                                · {{ __('Hiện tại') }}: {{ strtoupper($refundTx->status) }}
+                                                            </p>
+                                                            <div class="flex items-center gap-2">
+                                                                <select name="status" class="w-full rounded-lg border-amber-200 bg-white text-xs focus:border-amber-400 focus:ring-amber-200">
+                                                                    <option value="processing">{{ __('PROCESSING') }}</option>
+                                                                    <option value="refunded">{{ __('REFUNDED') }}</option>
+                                                                    <option value="failed">{{ __('FAILED') }}</option>
+                                                                </select>
+                                                                <button type="submit" class="inline-flex items-center rounded-lg bg-amber-600 px-2 py-1 text-xs font-semibold text-white hover:bg-amber-700">
+                                                                    {{ __('Lưu') }}
+                                                                </button>
+                                                            </div>
+                                                        </form>
+                                                    @endforeach
+                                                </div>
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforeach
