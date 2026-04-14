@@ -137,6 +137,7 @@ class BookingLifecycleFlowTest extends TestCase
 
     public function test_scheduler_commands_send_reminder_and_follow_up_emails(): void
     {
+        Carbon::setTestNow(Carbon::today()->setTime(15, 0));
         Mail::fake();
 
         $host = $this->createUser(UserRole::Host);
@@ -170,6 +171,138 @@ class BookingLifecycleFlowTest extends TestCase
         Mail::assertQueued(BookingFollowUpMail::class, 1);
         $this->assertNotNull($reminderBooking->reminder_sent_at);
         $this->assertNotNull($followUpBooking->follow_up_sent_at);
+        Carbon::setTestNow();
+    }
+
+    public function test_no_show_command_transitions_booking_and_records_ledger(): void
+    {
+        Mail::fake();
+
+        $host = $this->createUser(UserRole::Host);
+        $customer = $this->createUser(UserRole::Customer);
+        $hotel = $this->createHotel($host);
+        $roomType = $this->createRoomType($hotel);
+        $this->seedCancellationPolicy($hotel);
+
+        $booking = $this->createBooking($customer, $hotel, $roomType, [
+            'status' => BookingStatus::Confirmed,
+            'check_in_date' => Carbon::yesterday(),
+            'check_out_date' => Carbon::today()->addDay(),
+            'nights' => 2,
+        ]);
+
+        $this->artisan('bookings:mark-no-show')->assertSuccessful();
+        $booking->refresh();
+
+        $this->assertSame(BookingStatus::NoShow, $booking->status);
+        $this->assertNotNull($booking->no_show_at);
+        $this->assertGreaterThan(0, $booking->transactions()->count());
+    }
+
+    public function test_booking_creation_blocks_when_inventory_is_full(): void
+    {
+        $host = $this->createUser(UserRole::Host);
+        $customerA = $this->createUser(UserRole::Customer);
+        $customerB = $this->createUser(UserRole::Customer);
+        $hotel = $this->createHotel($host);
+        $roomType = $this->createRoomType($hotel, ['quantity' => 1]);
+        $this->seedCancellationPolicy($hotel);
+
+        $this->createBooking($customerA, $hotel, $roomType, [
+            'status' => BookingStatus::Confirmed,
+            'check_in_date' => Carbon::today()->addDays(3),
+            'check_out_date' => Carbon::today()->addDays(5),
+            'nights' => 2,
+        ]);
+
+        $this->actingAs($customerB)->post(route('customer.bookings.store', $hotel), [
+            'room_type_id' => $roomType->id,
+            'check_in_date' => Carbon::today()->addDays(3)->toDateString(),
+            'check_out_date' => Carbon::today()->addDays(5)->toDateString(),
+            'guest_count' => 1,
+            'payment_method' => BookingPaymentMethod::Cash->value,
+        ])->assertSessionHasErrors('room_type_id');
+    }
+
+    public function test_booking_creation_records_charge_transaction_and_initial_event(): void
+    {
+        Mail::fake();
+
+        $host = $this->createUser(UserRole::Host);
+        $customer = $this->createUser(UserRole::Customer);
+        $hotel = $this->createHotel($host);
+        $roomType = $this->createRoomType($hotel);
+        $this->seedCancellationPolicy($hotel);
+
+        $this->actingAs($customer)->post(route('customer.bookings.store', $hotel), [
+            'room_type_id' => $roomType->id,
+            'check_in_date' => Carbon::today()->addDays(5)->toDateString(),
+            'check_out_date' => Carbon::today()->addDays(7)->toDateString(),
+            'guest_count' => 2,
+            'payment_method' => BookingPaymentMethod::Cash->value,
+        ])->assertRedirect(route('customer.bookings.index'));
+
+        $booking = Booking::query()->latest('id')->firstOrFail();
+        $this->assertTrue($booking->transactions()->where('type', 'charge')->exists());
+        $this->assertTrue($booking->statusEvents()->where('to_status', BookingStatus::Pending->value)->exists());
+    }
+
+    public function test_host_can_advance_refund_workflow_status(): void
+    {
+        $host = $this->createUser(UserRole::Host);
+        $customer = $this->createUser(UserRole::Customer);
+        $hotel = $this->createHotel($host);
+        $roomType = $this->createRoomType($hotel);
+        $this->seedCancellationPolicy($hotel);
+
+        $booking = $this->createBooking($customer, $hotel, $roomType, [
+            'status' => BookingStatus::Confirmed,
+            'check_in_date' => Carbon::today()->addDays(2),
+            'check_out_date' => Carbon::today()->addDays(4),
+            'nights' => 2,
+        ]);
+
+        $this->actingAs($customer)->patch(route('customer.bookings.cancel', $booking), [
+            'cancel_reason' => 'Đổi lịch',
+        ])->assertSessionHas('status');
+
+        $refundTx = $booking->refresh()->transactions()->where('type', 'refund')->firstOrFail();
+
+        $this->actingAs($host)->patch(route('host.bookings.update-refund-status', [$booking, $refundTx]), [
+            'status' => 'processing',
+        ])->assertSessionHas('status');
+
+        $this->assertSame('processing', $refundTx->refresh()->status);
+    }
+
+    public function test_host_policy_update_rejects_overlapping_tiers(): void
+    {
+        $host = $this->createUser(UserRole::Host);
+        $hotel = $this->createHotel($host);
+        $this->seedCancellationPolicy($hotel);
+
+        $this->actingAs($host)->put(route('host.cancellation-policy.update'), [
+            'hotel_id' => $hotel->id,
+            'name' => 'Policy X',
+            'send_reminder_d3' => 1,
+            'send_reminder_d1' => 1,
+            'send_reminder_h6' => 1,
+            'tiers' => [
+                ['min_hours_before' => 24, 'max_hours_before' => 80, 'fee_percent' => 20, 'sort_order' => 1],
+                ['min_hours_before' => 72, 'max_hours_before' => null, 'fee_percent' => 0, 'sort_order' => 2],
+            ],
+        ])->assertSessionHasErrors('tiers.1.min_hours_before');
+    }
+
+    public function test_host_availability_calendar_can_be_rendered(): void
+    {
+        $host = $this->createUser(UserRole::Host);
+        $hotel = $this->createHotel($host);
+        $this->seedCancellationPolicy($hotel);
+
+        $this->actingAs($host)->get(route('host.availability.index', ['hotel_id' => $hotel->id]))
+            ->assertOk()
+            ->assertSee('Lịch khả dụng', false);
     }
 
     private function createUser(UserRole $role): User
