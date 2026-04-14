@@ -39,6 +39,7 @@ class BookingSeeder extends Seeder
             BookingStatus::Pending,
             BookingStatus::Confirmed,
             BookingStatus::Cancelled,
+            BookingStatus::NoShow,
             BookingStatus::Completed,
         ];
 
@@ -60,6 +61,7 @@ class BookingSeeder extends Seeder
             $confirmedAt = null;
             $cancelledAt = null;
             $completedAt = null;
+            $noShowAt = null;
             $cancelReason = null;
             $cancellationFeeAmount = null;
             $refundAmount = null;
@@ -76,13 +78,22 @@ class BookingSeeder extends Seeder
                     'policy_name' => 'Chính sách tiêu chuẩn',
                     'fee_percent' => 30,
                 ];
+            } elseif ($status === BookingStatus::NoShow) {
+                $noShowAt = $checkIn->copy()->addDay();
+                $cancelReason = 'Seeded no-show';
+                $cancellationFeeAmount = round(($unitPrice * $nights) * 0.5, 2);
+                $refundAmount = round(($unitPrice * $nights) - $cancellationFeeAmount, 2);
+                $cancellationPolicySnapshot = [
+                    'policy_name' => 'Chính sách tiêu chuẩn',
+                    'fee_percent' => 50,
+                ];
             } elseif ($status === BookingStatus::Completed) {
                 $confirmedAt = $checkIn->copy()->subDays(random_int(2, 6));
                 $completedAt = $checkOut->copy()->addDay();
             }
 
             $paymentStatus = match ($status) {
-                BookingStatus::Cancelled => BookingPaymentStatus::Failed,
+                BookingStatus::Cancelled, BookingStatus::NoShow => BookingPaymentStatus::Failed,
                 BookingStatus::Completed => BookingPaymentStatus::Paid,
                 default => $paymentMethod === BookingPaymentMethod::Cash
                     ? BookingPaymentStatus::Unpaid
@@ -111,8 +122,9 @@ class BookingSeeder extends Seeder
                     'host_note' => null,
                     'confirmed_at' => $confirmedAt,
                     'cancelled_at' => $cancelledAt,
+                    'no_show_at' => $noShowAt,
                     'completed_at' => $completedAt,
-                    'status_changed_at' => $cancelledAt ?? $completedAt ?? $confirmedAt ?? now(),
+                    'status_changed_at' => $noShowAt ?? $cancelledAt ?? $completedAt ?? $confirmedAt ?? now(),
                     'status_changed_by' => $customer->id,
                     'cancelled_by' => $cancelledAt ? $customer->id : null,
                     'cancel_reason' => $cancelReason,

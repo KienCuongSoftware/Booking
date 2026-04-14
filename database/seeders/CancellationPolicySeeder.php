@@ -18,6 +18,9 @@ class CancellationPolicySeeder extends Seeder
                 [
                     'name' => 'Chính sách tiêu chuẩn',
                     'is_active' => true,
+                    'send_reminder_d3' => true,
+                    'send_reminder_d1' => true,
+                    'send_reminder_h6' => true,
                 ],
             );
 
