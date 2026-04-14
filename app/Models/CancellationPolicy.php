@@ -12,12 +12,18 @@ class CancellationPolicy extends Model
         'hotel_id',
         'name',
         'is_active',
+        'send_reminder_d3',
+        'send_reminder_d1',
+        'send_reminder_h6',
     ];
 
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
+            'send_reminder_d3' => 'boolean',
+            'send_reminder_d1' => 'boolean',
+            'send_reminder_h6' => 'boolean',
         ];
     }
 
