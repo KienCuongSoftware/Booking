@@ -1,7 +1,15 @@
 <x-mail::message>
 # {{ __('Nhắc lịch nhận phòng') }}
 
-{{ __('Bạn có lịch nhận phòng vào ngày mai.') }}
+@php
+    $windowLabel = match ($reminderWindow) {
+        'd3' => __('3 ngày trước nhận phòng'),
+        'h6' => __('6 giờ trước nhận phòng'),
+        default => __('1 ngày trước nhận phòng'),
+    };
+@endphp
+
+{{ __('Nhắc lịch ở mốc: :window.', ['window' => $windowLabel]) }}
 
 <x-mail::panel>
 {{ __('Mã đơn') }}: **{{ $booking->booking_code }}**  

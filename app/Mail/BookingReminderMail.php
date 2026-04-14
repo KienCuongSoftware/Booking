@@ -14,7 +14,10 @@ class BookingReminderMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public Booking $booking) {}
+    public function __construct(
+        public Booking $booking,
+        public string $reminderWindow = 'd1',
+    ) {}
 
     public function envelope(): Envelope
     {

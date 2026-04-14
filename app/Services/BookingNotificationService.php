@@ -39,21 +39,37 @@ class BookingNotificationService
 
     public function sendUpcomingCheckInReminders(): int
     {
+        return $this->sendRemindersByWindow('d1');
+    }
+
+    public function sendRemindersByWindow(string $window): int
+    {
         $bookings = Booking::query()
             ->where('status', BookingStatus::Confirmed->value)
-            ->whereDate('check_in_date', now()->addDay()->toDateString())
-            ->whereNull('reminder_sent_at')
-            ->with(['customer:id,name,email', 'hotel:id,name', 'roomType:id,name'])
-            ->get();
+            ->whereNull($this->reminderColumn($window))
+            ->with(['customer:id,name,email', 'hotel:id,name', 'hotel.cancellationPolicy:id,hotel_id,send_reminder_d3,send_reminder_d1,send_reminder_h6', 'roomType:id,name'])
+            ->get()
+            ->filter(fn (Booking $booking) => $this->shouldSendReminder($booking, $window))
+            ->values();
 
         foreach ($bookings as $booking) {
-            Mail::to($booking->customer->email)->queue(new BookingReminderMail($booking));
+            Mail::to($booking->customer->email)->queue(new BookingReminderMail($booking, $window));
             $booking->forceFill([
-                'reminder_sent_at' => now(),
+                $this->reminderColumn($window) => now(),
+                'reminder_sent_at' => $window === 'd1' ? now() : $booking->reminder_sent_at,
             ])->save();
         }
 
         return $bookings->count();
+    }
+
+    public function sendAllScheduledReminders(): array
+    {
+        return [
+            'd3' => $this->sendRemindersByWindow('d3'),
+            'd1' => $this->sendRemindersByWindow('d1'),
+            'h6' => $this->sendRemindersByWindow('h6'),
+        ];
     }
 
     public function sendCompletionFollowUps(): int
@@ -74,4 +90,41 @@ class BookingNotificationService
 
         return $bookings->count();
     }
+
+    private function reminderColumn(string $window): string
+    {
+        return match ($window) {
+            'd3' => 'reminder_d3_sent_at',
+            'h6' => 'reminder_h6_sent_at',
+            default => 'reminder_sent_at',
+        };
+    }
+
+    private function shouldSendReminder(Booking $booking, string $window): bool
+    {
+        $policy = $booking->hotel?->cancellationPolicy;
+        if (! $policy) {
+            return false;
+        }
+
+        if ($window === 'd3' && ! $policy->send_reminder_d3) {
+            return false;
+        }
+        if ($window === 'd1' && ! $policy->send_reminder_d1) {
+            return false;
+        }
+        if ($window === 'h6' && ! $policy->send_reminder_h6) {
+            return false;
+        }
+
+        $checkInAt = $booking->check_in_date->copy()->setTime(14, 0);
+        $now = now();
+
+        return match ($window) {
+            'd3' => $now->between($checkInAt->copy()->subDays(3), $checkInAt->copy()->subDays(2)),
+            'h6' => $now->between($checkInAt->copy()->subHours(6), $checkInAt),
+            default => $now->between($checkInAt->copy()->subDay(), $checkInAt),
+        };
+    }
+
 }
