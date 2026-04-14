@@ -8,6 +8,7 @@ use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Booking extends Model
 {
@@ -26,6 +27,7 @@ class Booking extends Model
         'status',
         'confirmed_at',
         'cancelled_at',
+        'no_show_at',
         'completed_at',
         'status_changed_at',
         'status_changed_by',
@@ -41,6 +43,8 @@ class Booking extends Model
         'refund_amount',
         'cancellation_policy_snapshot',
         'reminder_sent_at',
+        'reminder_d3_sent_at',
+        'reminder_h6_sent_at',
         'follow_up_sent_at',
     ];
 
@@ -56,6 +60,7 @@ class Booking extends Model
             'status' => BookingStatus::class,
             'confirmed_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'no_show_at' => 'datetime',
             'completed_at' => 'datetime',
             'status_changed_at' => 'datetime',
             'status_changed_by' => 'integer',
@@ -67,6 +72,8 @@ class Booking extends Model
             'refund_amount' => 'decimal:2',
             'cancellation_policy_snapshot' => 'array',
             'reminder_sent_at' => 'datetime',
+            'reminder_d3_sent_at' => 'datetime',
+            'reminder_h6_sent_at' => 'datetime',
             'follow_up_sent_at' => 'datetime',
         ];
     }
@@ -94,5 +101,15 @@ class Booking extends Model
     public function cancelledBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'cancelled_by');
+    }
+
+    public function statusEvents(): HasMany
+    {
+        return $this->hasMany(BookingStatusEvent::class)->orderByDesc('changed_at');
+    }
+
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(BookingTransaction::class)->latest('id');
     }
 }
