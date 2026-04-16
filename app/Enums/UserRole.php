@@ -32,7 +32,7 @@ enum UserRole: string
     }
 
     /**
-     * Hub nội bộ theo vai trò. Khách hàng không có dashboard — dùng danh sách đơn đặt.
+     * Hub nội bộ theo vai trò (khách: danh sách đơn khi cần trang trong app).
      */
     public function dashboardRouteName(): string
     {
@@ -45,7 +45,7 @@ enum UserRole: string
     }
 
     /**
-     * Sau đăng nhập / xác minh email / OAuth: khách hàng về trang chủ, các vai trò khác về dashboard nội bộ.
+     * Sau đăng nhập / xác minh email / OAuth: khách về trang chủ catalog, các vai trò khác về dashboard nội bộ.
      */
     public function redirectRouteAfterAuthentication(): string
     {

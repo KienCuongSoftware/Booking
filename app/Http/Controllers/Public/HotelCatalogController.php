@@ -14,7 +14,8 @@ class HotelCatalogController extends Controller
     {
         $query = Hotel::query()
             ->where('is_active', true)
-            ->with('province');
+            ->with('province')
+            ->withAvg('reviews', 'rating');
 
         if ($request->filled('province_code')) {
             $query->where('province_code', $request->input('province_code'));
@@ -66,6 +67,8 @@ class HotelCatalogController extends Controller
             'roomTypes.images',
         ]);
 
-        return view('public.hotels.show', compact('hotel'));
+        $avgRating = $hotel->reviews()->avg('rating');
+
+        return view('public.hotels.show', compact('hotel', 'avgRating'));
     }
 }

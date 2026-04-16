@@ -9,6 +9,7 @@ use App\Enums\BookingStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Booking extends Model
 {
@@ -46,6 +47,18 @@ class Booking extends Model
         'reminder_d3_sent_at',
         'reminder_h6_sent_at',
         'follow_up_sent_at',
+        'hold_expires_at',
+        'idempotency_key',
+        'paypal_order_id',
+        'paypal_capture_id',
+        'promo_code_id',
+        'discount_amount',
+        'internal_tags',
+        'check_in_token',
+        'checked_in_at',
+        'momo_order_id',
+        'pricing_snapshot',
+        'pending_host_notified_at',
     ];
 
     protected function casts(): array
@@ -75,6 +88,12 @@ class Booking extends Model
             'reminder_d3_sent_at' => 'datetime',
             'reminder_h6_sent_at' => 'datetime',
             'follow_up_sent_at' => 'datetime',
+            'hold_expires_at' => 'datetime',
+            'discount_amount' => 'decimal:2',
+            'internal_tags' => 'array',
+            'checked_in_at' => 'datetime',
+            'pricing_snapshot' => 'array',
+            'pending_host_notified_at' => 'datetime',
         ];
     }
 
@@ -111,5 +130,29 @@ class Booking extends Model
     public function transactions(): HasMany
     {
         return $this->hasMany(BookingTransaction::class)->latest('id');
+    }
+
+    public function promoCode(): BelongsTo
+    {
+        return $this->belongsTo(PromoCode::class);
+    }
+
+    public function review(): HasOne
+    {
+        return $this->hasOne(Review::class);
+    }
+
+    public function isPayPalCheckoutPending(): bool
+    {
+        return $this->status === BookingStatus::Pending
+            && $this->payment_method === BookingPaymentMethod::PayPal
+            && $this->payment_status === BookingPaymentStatus::Pending;
+    }
+
+    public function isBankTransferAwaitingReference(): bool
+    {
+        return $this->status === BookingStatus::Pending
+            && $this->payment_method === BookingPaymentMethod::BankTransfer
+            && in_array($this->payment_status, [BookingPaymentStatus::Pending, BookingPaymentStatus::Unpaid], true);
     }
 }

@@ -20,6 +20,8 @@ class RoomType extends Model
         'base_price',
         'old_price',
         'new_price',
+        'weekend_multiplier',
+        'holiday_multiplier',
         'is_active',
     ];
 
@@ -32,6 +34,8 @@ class RoomType extends Model
             'base_price' => 'decimal:2',
             'old_price' => 'decimal:2',
             'new_price' => 'decimal:2',
+            'weekend_multiplier' => 'decimal:4',
+            'holiday_multiplier' => 'decimal:4',
             'is_active' => 'boolean',
         ];
     }

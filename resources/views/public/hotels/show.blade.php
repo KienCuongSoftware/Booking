@@ -1,5 +1,10 @@
 <x-public-layout :title="$hotel->name" :description="\Illuminate\Support\Str::limit(strip_tags($hotel->description ?? ''), 160)">
     <div class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+        @if (session('status'))
+            <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+                {{ session('status') }}
+            </div>
+        @endif
         <nav class="mb-6 text-sm text-gray-600">
             <a href="{{ route('home') }}" class="font-medium text-bcom-blue hover:text-bcom-navy">{{ __('Khách sạn') }}</a>
             <span class="mx-2 text-gray-400" aria-hidden="true">/</span>
@@ -21,6 +26,9 @@
                 <div class="flex flex-wrap items-center gap-3 text-sm">
                     @if ($hotel->star_rating)
                         <span class="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-900">{{ $hotel->star_rating }}★</span>
+                    @endif
+                    @if (! empty($avgRating))
+                        <span class="inline-flex rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-xs font-semibold text-bcom-navy">{{ __('Đánh giá') }}: {{ number_format((float) $avgRating, 1) }}★</span>
                     @endif
                     @if ($hotel->old_price)
                         <p class="text-gray-500"><span class="line-through">{{ number_format((float) $hotel->old_price, 0, ',', '.') }} VND</span></p>
@@ -87,7 +95,7 @@
         <div class="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md shadow-slate-900/5">
             <div class="border-b border-slate-200 bg-sky-50/60 px-6 py-4">
                 <h2 class="text-lg font-semibold text-bcom-navy">{{ __('Loại phòng') }}</h2>
-                <p class="mt-1 text-xs text-amber-800">{{ __('Chọn ngày nhận và trả phòng để đặt chỗ sẽ được thêm sau.') }}</p>
+                <p class="mt-1 text-xs text-amber-800">{{ __('Chọn ngày nhận/trả phòng để hệ thống chỉ cho phép ngày còn chỗ.') }}</p>
             </div>
             @if ($hotel->roomTypes->isEmpty())
                 <div class="p-8 text-center text-sm text-gray-600">{{ __('Chưa có loại phòng công khai.') }}</div>
@@ -182,9 +190,9 @@
                 <div class="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md shadow-slate-900/5">
                     <div class="border-b border-slate-200 bg-sky-50/60 px-6 py-4">
                         <h2 class="text-lg font-semibold text-bcom-navy">{{ __('Đặt phòng ngay') }}</h2>
-                        <p class="mt-1 text-xs text-gray-600">{{ __('Bạn có thể thanh toán tiền mặt hoặc chuyển khoản (MoMo / PayPal).') }}</p>
+                        <p class="mt-1 text-xs text-gray-600">{{ __('Giá có thể thay đổi theo cuối tuần / ngày lễ / đặt sát ngày (theo cấu hình khách sạn). Thanh toán tiền mặt, chuyển khoản hoặc PayPal.') }}</p>
                     </div>
-                    <form method="POST" action="{{ route('customer.bookings.store', $hotel) }}" class="grid gap-4 p-6 sm:grid-cols-2">
+                    <form id="booking-form" method="POST" action="{{ route('customer.bookings.store', $hotel) }}" class="grid gap-4 p-6 sm:grid-cols-2">
                         @csrf
                         <div class="sm:col-span-2">
                             <x-input-label for="room_type_id" :value="__('Loại phòng')" />
@@ -201,14 +209,20 @@
 
                         <div>
                             <x-input-label for="check_in_date" :value="__('Nhận phòng')" />
-                            <x-text-input id="check_in_date" type="date" name="check_in_date" class="mt-1 block w-full" :value="old('check_in_date', request('check_in_date'))" required />
+                            <x-text-input id="check_in_date" type="date" name="check_in_date" class="mt-1 block w-full" :value="old('check_in_date', request('check_in_date'))" :min="now()->toDateString()" required />
                             <x-input-error :messages="$errors->get('check_in_date')" class="mt-2" />
                         </div>
 
                         <div>
                             <x-input-label for="check_out_date" :value="__('Trả phòng')" />
-                            <x-text-input id="check_out_date" type="date" name="check_out_date" class="mt-1 block w-full" :value="old('check_out_date', request('check_out_date'))" required />
+                            <x-text-input id="check_out_date" type="date" name="check_out_date" class="mt-1 block w-full" :value="old('check_out_date', request('check_out_date'))" :min="now()->addDay()->toDateString()" required />
                             <x-input-error :messages="$errors->get('check_out_date')" class="mt-2" />
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <p id="availability_message" class="rounded-lg border border-sky-100 bg-sky-50 px-3 py-2 text-xs text-sky-900">
+                                {{ __('Chọn loại phòng và khoảng ngày, hệ thống sẽ kiểm tra ngày còn chỗ trước khi cho phép thanh toán.') }}
+                            </p>
                         </div>
 
                         <div>
@@ -222,6 +236,9 @@
                             <select id="payment_method" name="payment_method" class="mt-1 block w-full rounded-xl border-gray-200 text-sm focus:border-bcom-blue focus:ring-bcom-blue/20" required>
                                 <option value="cash" @selected(old('payment_method', 'cash') === 'cash')>{{ __('Tiền mặt') }}</option>
                                 <option value="bank_transfer" @selected(old('payment_method') === 'bank_transfer')>{{ __('Chuyển khoản') }}</option>
+                                @if (config('booking.payments.paypal.enabled') && config('services.paypal.client_id') && config('services.paypal.client_secret'))
+                                    <option value="paypal" @selected(old('payment_method') === 'paypal')>{{ __('PayPal') }}</option>
+                                @endif
                             </select>
                             <x-input-error :messages="$errors->get('payment_method')" class="mt-2" />
                         </div>
@@ -235,6 +252,17 @@
                             <x-input-error :messages="$errors->get('payment_provider')" class="mt-2" />
                         </div>
 
+                        <div>
+                            <x-input-label for="promo_code" :value="__('Mã giảm giá (nếu có)')" />
+                            <x-text-input id="promo_code" type="text" name="promo_code" class="mt-1 block w-full" :value="old('promo_code')" />
+                            <x-input-error :messages="$errors->get('promo_code')" class="mt-2" />
+                        </div>
+
+                        <div class="sm:col-span-2 flex items-start gap-2">
+                            <input id="join_waitlist" type="checkbox" name="join_waitlist" value="1" class="mt-1 rounded border-gray-300 text-bcom-blue focus:ring-bcom-blue" @checked(old('join_waitlist'))>
+                            <label for="join_waitlist" class="text-sm text-gray-700">{{ __('Nếu hết chỗ, tự động thêm tôi vào danh sách chờ (email khi có slot).') }}</label>
+                        </div>
+
                         <div class="sm:col-span-2">
                             <x-input-label for="payment_reference" :value="__('Mã giao dịch (nếu có)')" />
                             <x-text-input id="payment_reference" type="text" name="payment_reference" class="mt-1 block w-full" :value="old('payment_reference')" />
@@ -246,9 +274,15 @@
                         </div>
 
                         <div class="sm:col-span-2 flex justify-end">
-                            <x-primary-button>{{ __('Gửi yêu cầu đặt phòng') }}</x-primary-button>
+                            <x-primary-button>{{ __('Tiếp tục đến thanh toán') }}</x-primary-button>
                         </div>
                     </form>
+                    <div class="border-t border-slate-100 px-6 py-4">
+                        <p class="text-xs text-gray-600">
+                            <a href="{{ route('customer.waitlist.create', $hotel) }}" class="font-semibold text-bcom-blue hover:text-bcom-navy">{{ __('Chỉ đăng ký chờ (chưa đặt phòng)') }}</a>
+                            — {{ __('nhận email khi có chỗ trống.') }}
+                        </p>
+                    </div>
                 </div>
             @endif
         @endauth
@@ -264,4 +298,161 @@
             @endguest
         </div>
     </div>
+
+    @auth
+        @if (auth()->user()->role->value === 'customer')
+            <script>
+                (() => {
+                    const form = document.getElementById('booking-form');
+                    const roomTypeInput = document.getElementById('room_type_id');
+                    const checkInInput = document.getElementById('check_in_date');
+                    const checkOutInput = document.getElementById('check_out_date');
+                    const paymentMethodInput = document.getElementById('payment_method');
+                    const paymentProviderInput = document.getElementById('payment_provider');
+                    const paymentReferenceInput = document.getElementById('payment_reference');
+                    const messageNode = document.getElementById('availability_message');
+                    const availabilityUrl = @json(route('customer.hotels.availability', $hotel));
+                    let blockedDates = new Set();
+
+                    const setMessage = (text, type = 'info') => {
+                        if (!messageNode) return;
+                        messageNode.textContent = text;
+                        const cls = messageNode.classList;
+                        cls.remove('border-sky-100', 'bg-sky-50', 'text-sky-900', 'border-red-200', 'bg-red-50', 'text-red-800', 'border-emerald-200', 'bg-emerald-50', 'text-emerald-800');
+                        if (type === 'error') {
+                            cls.add('border-red-200', 'bg-red-50', 'text-red-800');
+                        } else if (type === 'success') {
+                            cls.add('border-emerald-200', 'bg-emerald-50', 'text-emerald-800');
+                        } else {
+                            cls.add('border-sky-100', 'bg-sky-50', 'text-sky-900');
+                        }
+                    };
+
+                    const formatViDate = (isoDate) => {
+                        const [y, m, d] = isoDate.split('-');
+                        return `${d}/${m}/${y}`;
+                    };
+
+                    const nextDay = (isoDate) => {
+                        const date = new Date(`${isoDate}T00:00:00`);
+                        date.setDate(date.getDate() + 1);
+                        return date.toISOString().slice(0, 10);
+                    };
+
+                    const eachNightInRange = (checkIn, checkOut) => {
+                        const result = [];
+                        const cursor = new Date(`${checkIn}T00:00:00`);
+                        const checkout = new Date(`${checkOut}T00:00:00`);
+                        while (cursor < checkout) {
+                            result.push(cursor.toISOString().slice(0, 10));
+                            cursor.setDate(cursor.getDate() + 1);
+                        }
+                        return result;
+                    };
+
+                    const validateRangeAgainstBlocked = () => {
+                        const checkIn = checkInInput.value;
+                        const checkOut = checkOutInput.value;
+                        if (!checkIn || !checkOut) return true;
+
+                        const blockedNight = eachNightInRange(checkIn, checkOut).find((d) => blockedDates.has(d));
+                        if (blockedNight) {
+                            setMessage(`{{ __('Khoảng ngày bạn chọn bị kín phòng vào ngày') }} ${formatViDate(blockedNight)}.`, 'error');
+                            return false;
+                        }
+
+                        setMessage('{{ __('Khoảng ngày còn chỗ. Bạn có thể tiếp tục thanh toán.') }}', 'success');
+                        return true;
+                    };
+
+                    const syncPaymentFields = () => {
+                        const method = paymentMethodInput.value;
+                        const isBankTransfer = method === 'bank_transfer';
+
+                        paymentProviderInput.disabled = !isBankTransfer;
+                        paymentProviderInput.required = isBankTransfer;
+                        paymentProviderInput.classList.toggle('bg-slate-100', !isBankTransfer);
+
+                        paymentReferenceInput.disabled = !isBankTransfer;
+                        paymentReferenceInput.classList.toggle('bg-slate-100', !isBankTransfer);
+
+                        if (!isBankTransfer) {
+                            paymentProviderInput.value = 'momo';
+                            paymentReferenceInput.value = '';
+                        }
+                    };
+
+                    const loadBlockedDates = async () => {
+                        const roomTypeId = roomTypeInput.value;
+                        blockedDates = new Set();
+                        if (!roomTypeId) {
+                            setMessage('{{ __('Chọn loại phòng để kiểm tra ngày còn chỗ.') }}');
+                            return;
+                        }
+
+                        const params = new URLSearchParams({
+                            room_type_id: roomTypeId,
+                        });
+
+                        if (checkInInput.value) params.set('check_in_date', checkInInput.value);
+                        if (checkOutInput.value) params.set('check_out_date', checkOutInput.value);
+
+                        try {
+                            const response = await fetch(`${availabilityUrl}?${params.toString()}`, {
+                                headers: {
+                                    'Accept': 'application/json',
+                                }
+                            });
+                            if (!response.ok) throw new Error('availability_error');
+                            const payload = await response.json();
+                            blockedDates = new Set(payload.blocked_dates || []);
+
+                            if (checkInInput.value && blockedDates.has(checkInInput.value)) {
+                                checkInInput.value = '';
+                                checkOutInput.value = '';
+                                setMessage('{{ __('Ngày nhận phòng bạn chọn đã kín. Vui lòng chọn ngày khác.') }}', 'error');
+                                return;
+                            }
+
+                            if (checkInInput.value) {
+                                checkOutInput.min = nextDay(checkInInput.value);
+                            }
+
+                            if (checkInInput.value && checkOutInput.value) {
+                                validateRangeAgainstBlocked();
+                                return;
+                            }
+
+                            setMessage('{{ __('Đã cập nhật tình trạng phòng. Hãy chọn khoảng ngày để tiếp tục.') }}');
+                        } catch (e) {
+                            setMessage('{{ __('Không thể kiểm tra lịch trống lúc này. Vui lòng thử lại.') }}', 'error');
+                        }
+                    };
+
+                    roomTypeInput.addEventListener('change', loadBlockedDates);
+                    paymentMethodInput.addEventListener('change', syncPaymentFields);
+                    checkInInput.addEventListener('change', () => {
+                        if (checkInInput.value) {
+                            checkOutInput.min = nextDay(checkInInput.value);
+                            if (checkOutInput.value && checkOutInput.value <= checkInInput.value) {
+                                checkOutInput.value = '';
+                            }
+                        }
+                        loadBlockedDates();
+                    });
+                    checkOutInput.addEventListener('change', loadBlockedDates);
+
+                    form.addEventListener('submit', async (event) => {
+                        syncPaymentFields();
+                        await loadBlockedDates();
+                        if (!validateRangeAgainstBlocked()) {
+                            event.preventDefault();
+                        }
+                    });
+
+                    syncPaymentFields();
+                })();
+            </script>
+        @endif
+    @endauth
 </x-public-layout>

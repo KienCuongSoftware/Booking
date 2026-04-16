@@ -7,9 +7,11 @@ use App\Enums\BookingStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\BookingTransaction;
+use App\Services\AuditLogService;
 use App\Services\BookingLedgerService;
 use App\Services\BookingLifecycleService;
 use App\Services\BookingNotificationService;
+use App\Services\BookingWaitlistService;
 use App\Services\CancellationFeeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,6 +24,8 @@ class BookingController extends Controller
         private readonly CancellationFeeService $cancellationFeeService,
         private readonly BookingLedgerService $bookingLedgerService,
         private readonly BookingNotificationService $bookingNotificationService,
+        private readonly BookingWaitlistService $bookingWaitlistService,
+        private readonly AuditLogService $auditLogService,
     ) {}
 
     public function index(Request $request): View
@@ -48,11 +52,18 @@ class BookingController extends Controller
         $validated = $request->validate([
             'status' => ['required', 'in:confirmed,cancelled,completed,no_show'],
             'host_note' => ['nullable', 'string', 'max:1000'],
+            'internal_tags' => ['nullable', 'string', 'max:500'],
             'mark_paid' => ['nullable', 'boolean'],
         ]);
 
         $originalStatus = $booking->status;
         $booking->host_note = ($validated['host_note'] ?? null) ?: $booking->host_note;
+
+        if (array_key_exists('internal_tags', $validated)) {
+            $raw = (string) ($validated['internal_tags'] ?? '');
+            $tags = array_values(array_filter(array_map('trim', explode(',', $raw))));
+            $booking->internal_tags = array_slice($tags, 0, 20);
+        }
 
         $markedPaid = false;
         if (($validated['mark_paid'] ?? false) && $booking->payment_status !== BookingPaymentStatus::Paid) {
@@ -89,6 +100,15 @@ class BookingController extends Controller
         }
         $this->bookingNotificationService->sendStatusChanged($booking, $originalStatus);
 
+        if (in_array($booking->status->value, [BookingStatus::Cancelled->value, BookingStatus::NoShow->value], true)) {
+            $this->bookingWaitlistService->notifyForFreedSlot($booking);
+        }
+
+        $this->auditLogService->record($booking, 'host_status_updated', $request->user(), [
+            'from' => $originalStatus instanceof BookingStatus ? $originalStatus->value : (string) $originalStatus,
+            'to' => $booking->status->value,
+        ], $request);
+
         return back()->with('status', __('Đã cập nhật trạng thái đơn đặt.'));
     }
 
@@ -110,4 +130,3 @@ class BookingController extends Controller
         return back()->with('status', __('Đã cập nhật trạng thái hoàn tiền.'));
     }
 }
-

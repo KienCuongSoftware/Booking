@@ -28,8 +28,19 @@ class BookingCreatedMail extends Mailable implements ShouldQueue
 
     public function content(): Content
     {
+        $intro = null;
+        $templates = $this->booking->hotel?->email_templates;
+        if (is_array($templates)) {
+            $intro = $this->recipientRole === 'host'
+                ? ($templates['host_created'] ?? null)
+                : ($templates['customer_created'] ?? null);
+        }
+
         return new Content(
             markdown: 'mail.booking.created',
+            with: [
+                'intro' => $intro,
+            ],
         );
     }
 }

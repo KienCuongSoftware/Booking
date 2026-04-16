@@ -5,6 +5,12 @@
     ? __('Bạn vừa nhận được một yêu cầu đặt phòng mới từ khách hàng.')
     : __('Yêu cầu đặt phòng của bạn đã được ghi nhận.') }}
 
+@if (! empty($intro))
+<x-mail::panel>
+{!! nl2br(e($intro)) !!}
+</x-mail::panel>
+@endif
+
 <x-mail::panel>
 {{ __('Mã đơn') }}: **{{ $booking->booking_code }}**  
 {{ __('Khách sạn') }}: **{{ $booking->hotel->name }}**  

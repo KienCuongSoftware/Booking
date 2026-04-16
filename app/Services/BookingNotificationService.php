@@ -7,8 +7,12 @@ use App\Mail\BookingCreatedMail;
 use App\Mail\BookingFollowUpMail;
 use App\Mail\BookingReminderMail;
 use App\Mail\BookingStatusChangedMail;
+use App\Mail\HostPendingBookingReminderMail;
 use App\Models\Booking;
+use Illuminate\Mail\Mailable;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Throwable;
 
 class BookingNotificationService
 {
@@ -16,10 +20,18 @@ class BookingNotificationService
     {
         $booking->loadMissing(['customer:id,name,email', 'hotel.host:id,name,email', 'roomType:id,name']);
 
-        Mail::to($booking->customer->email)->queue(new BookingCreatedMail($booking, 'customer'));
+        $this->queueSafely(
+            $booking->customer->email,
+            new BookingCreatedMail($booking, 'customer'),
+            'booking_created_customer'
+        );
 
         if ($booking->hotel?->host?->email) {
-            Mail::to($booking->hotel->host->email)->queue(new BookingCreatedMail($booking, 'host'));
+            $this->queueSafely(
+                $booking->hotel->host->email,
+                new BookingCreatedMail($booking, 'host'),
+                'booking_created_host'
+            );
         }
     }
 
@@ -34,7 +46,11 @@ class BookingNotificationService
             $from = BookingStatus::from($fromStatus);
         }
 
-        Mail::to($booking->customer->email)->queue(new BookingStatusChangedMail($booking, $from));
+        $this->queueSafely(
+            $booking->customer->email,
+            new BookingStatusChangedMail($booking, $from),
+            'booking_status_changed_customer'
+        );
     }
 
     public function sendUpcomingCheckInReminders(): int
@@ -44,6 +60,10 @@ class BookingNotificationService
 
     public function sendRemindersByWindow(string $window): int
     {
+        if (! config('booking.reminders.enabled', true)) {
+            return 0;
+        }
+
         $bookings = Booking::query()
             ->where('status', BookingStatus::Confirmed->value)
             ->whereNull($this->reminderColumn($window))
@@ -53,7 +73,11 @@ class BookingNotificationService
             ->values();
 
         foreach ($bookings as $booking) {
-            Mail::to($booking->customer->email)->queue(new BookingReminderMail($booking, $window));
+            $this->queueSafely(
+                $booking->customer->email,
+                new BookingReminderMail($booking, $window),
+                'booking_reminder_'.$window
+            );
             $booking->forceFill([
                 $this->reminderColumn($window) => now(),
                 'reminder_sent_at' => $window === 'd1' ? now() : $booking->reminder_sent_at,
@@ -74,6 +98,10 @@ class BookingNotificationService
 
     public function sendCompletionFollowUps(): int
     {
+        if (! config('booking.reminders.enabled', true)) {
+            return 0;
+        }
+
         $bookings = Booking::query()
             ->where('status', BookingStatus::Completed->value)
             ->whereNull('follow_up_sent_at')
@@ -82,10 +110,46 @@ class BookingNotificationService
             ->get();
 
         foreach ($bookings as $booking) {
-            Mail::to($booking->customer->email)->queue(new BookingFollowUpMail($booking));
+            $this->queueSafely(
+                $booking->customer->email,
+                new BookingFollowUpMail($booking),
+                'booking_follow_up'
+            );
             $booking->forceFill([
                 'follow_up_sent_at' => now(),
             ])->save();
+        }
+
+        return $bookings->count();
+    }
+
+    public function sendPendingHostSlaReminders(): int
+    {
+        if (! config('booking.pending_sla.enabled', true)) {
+            return 0;
+        }
+
+        $hours = max(1, (int) config('booking.pending_sla.hours', 24));
+        $threshold = now()->subHours($hours);
+
+        $bookings = Booking::query()
+            ->where('status', BookingStatus::Pending->value)
+            ->where('created_at', '<=', $threshold)
+            ->whereNull('pending_host_notified_at')
+            ->with(['hotel.host:id,name,email', 'roomType:id,name'])
+            ->get();
+
+        foreach ($bookings as $booking) {
+            $hostEmail = $booking->hotel?->host?->email;
+            if ($hostEmail) {
+                $this->queueSafely(
+                    $hostEmail,
+                    new HostPendingBookingReminderMail($booking),
+                    'booking_pending_host_sla'
+                );
+            }
+
+            $booking->forceFill(['pending_host_notified_at' => now()])->save();
         }
 
         return $bookings->count();
@@ -127,4 +191,17 @@ class BookingNotificationService
         };
     }
 
+    private function queueSafely(string $recipient, Mailable $mailable, string $context): void
+    {
+        try {
+            Mail::to($recipient)->queue($mailable);
+        } catch (Throwable $e) {
+            Log::warning('Mail queue failed', [
+                'context' => $context,
+                'recipient' => $recipient,
+                'error' => $e->getMessage(),
+            ]);
+            report($e);
+        }
+    }
 }

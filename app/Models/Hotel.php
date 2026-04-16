@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
+use App\Support\PublicDisk;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use App\Support\PublicDisk;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
@@ -23,6 +24,11 @@ class Hotel extends Model
         'base_price',
         'old_price',
         'new_price',
+        'weekend_multiplier',
+        'holiday_multiplier',
+        'last_minute_hours',
+        'last_minute_discount_percent',
+        'email_templates',
         'thumbnail',
         'description',
         'is_active',
@@ -34,6 +40,11 @@ class Hotel extends Model
             'base_price' => 'decimal:2',
             'old_price' => 'decimal:2',
             'new_price' => 'decimal:2',
+            'weekend_multiplier' => 'decimal:4',
+            'holiday_multiplier' => 'decimal:4',
+            'last_minute_hours' => 'integer',
+            'last_minute_discount_percent' => 'decimal:2',
+            'email_templates' => 'array',
             'is_active' => 'boolean',
         ];
     }
@@ -80,6 +91,11 @@ class Hotel extends Model
     public function cancellationPolicy(): HasOne
     {
         return $this->hasOne(CancellationPolicy::class);
+    }
+
+    public function reviews(): HasManyThrough
+    {
+        return $this->hasManyThrough(Review::class, Booking::class, 'hotel_id', 'booking_id', 'id', 'id');
     }
 
     public function thumbnailUrl(): string
