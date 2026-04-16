@@ -97,6 +97,17 @@
                                                         <option value="" selected disabled>{{ __('Trạng thái hiện tại không thể cập nhật') }}</option>
                                                     @endif
                                                 </select>
+                                                <div>
+                                                    <label class="text-xs font-medium text-gray-700" for="host_note_{{ $booking->id }}">{{ __('Ghi chú nội bộ') }}</label>
+                                                    <textarea id="host_note_{{ $booking->id }}" name="host_note" rows="2" class="mt-1 w-full rounded-lg border-gray-200 text-xs focus:border-bcom-blue focus:ring-bcom-blue/20">{{ old('host_note', $booking->host_note) }}</textarea>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs font-medium text-gray-700" for="internal_tags_{{ $booking->id }}">{{ __('Tag nội bộ (cách nhau bởi dấu phẩy)') }}</label>
+                                                    <input id="internal_tags_{{ $booking->id }}" type="text" name="internal_tags" value="{{ old('internal_tags', is_array($booking->internal_tags) ? implode(', ', $booking->internal_tags) : '') }}" class="mt-1 w-full rounded-lg border-gray-200 text-xs focus:border-bcom-blue focus:ring-bcom-blue/20" placeholder="VIP, công tác">
+                                                </div>
+                                                @if ($booking->hold_expires_at)
+                                                    <p class="text-xs text-amber-800">{{ __('Giữ chỗ đến') }}: {{ $booking->hold_expires_at->timezone(config('app.timezone'))->format('d/m/Y H:i') }}</p>
+                                                @endif
                                                 <label class="inline-flex items-center gap-2 text-xs text-gray-600">
                                                     <input type="checkbox" name="mark_paid" value="1" class="rounded border-gray-300 text-bcom-blue focus:ring-bcom-blue">
                                                     {{ __('Đánh dấu đã thanh toán') }}
@@ -107,6 +118,15 @@
                                                     class="inline-flex items-center rounded-lg bg-bcom-blue px-3 py-1.5 text-xs font-semibold text-white hover:bg-bcom-blue/90 disabled:cursor-not-allowed disabled:bg-slate-300">
                                                     {{ __('Cập nhật') }}
                                                 </button>
+                                            </form>
+                                            <form method="POST" action="{{ route('host.bookings.check-in', $booking) }}" class="mt-3 space-y-1">
+                                                @csrf
+                                                <label class="text-xs font-medium text-gray-700" for="checkin_token_{{ $booking->id }}">{{ __('Check-in (QR payload)') }}</label>
+                                                <div class="flex gap-1">
+                                                    <input id="checkin_token_{{ $booking->id }}" type="text" name="token" class="w-full rounded-lg border-gray-200 text-xs focus:border-bcom-blue focus:ring-bcom-blue/20" placeholder='JSON / BK...|token / URL có token'>
+                                                    <button type="submit" class="inline-flex shrink-0 items-center rounded-lg bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700">{{ __('OK') }}</button>
+                                                </div>
+                                                <p class="text-[11px] text-gray-500">{{ __('Chỉ check-in được đơn đã xác nhận và đúng ngày lưu trú.') }}</p>
                                             </form>
                                             @php
                                                 $refunds = $booking->transactions->where('type', 'refund');

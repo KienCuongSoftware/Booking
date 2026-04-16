@@ -51,6 +51,69 @@ class BookingLifecycleFlowTest extends TestCase
         Mail::assertQueued(BookingStatusChangedMail::class, 1);
     }
 
+    public function test_host_can_check_in_with_json_qr_payload_when_booking_is_valid(): void
+    {
+        $host = $this->createUser(UserRole::Host);
+        $customer = $this->createUser(UserRole::Customer);
+        $hotel = $this->createHotel($host);
+        $roomType = $this->createRoomType($hotel);
+        $this->seedCancellationPolicy($hotel);
+
+        $booking = $this->createBooking($customer, $hotel, $roomType, [
+            'status' => BookingStatus::Confirmed,
+            'check_in_date' => Carbon::today(),
+            'check_out_date' => Carbon::today()->addDay(),
+            'check_in_token' => 'token-checkin-123',
+        ]);
+
+        $payload = json_encode([
+            'booking_code' => $booking->booking_code,
+            'token' => $booking->check_in_token,
+            'hotel' => $hotel->name,
+            'room_type' => $roomType->name,
+        ], JSON_UNESCAPED_UNICODE);
+
+        $this->actingAs($host)->post(route('host.bookings.check-in', $booking), [
+            'token' => $payload,
+        ])->assertSessionHas('status');
+
+        $this->assertNotNull($booking->fresh()->checked_in_at);
+    }
+
+    public function test_host_can_open_qr_preview_route_and_confirm_check_in(): void
+    {
+        $host = $this->createUser(UserRole::Host);
+        $customer = $this->createUser(UserRole::Customer);
+        $hotel = $this->createHotel($host);
+        $roomType = $this->createRoomType($hotel);
+        $this->seedCancellationPolicy($hotel);
+
+        $booking = $this->createBooking($customer, $hotel, $roomType, [
+            'status' => BookingStatus::Confirmed,
+            'check_in_date' => Carbon::today(),
+            'check_out_date' => Carbon::today()->addDay(),
+            'check_in_token' => 'token-preview-456',
+        ]);
+
+        $payloadJson = json_encode([
+            'booking_code' => $booking->booking_code,
+            'token' => $booking->check_in_token,
+        ], JSON_UNESCAPED_UNICODE);
+        $encodedPayload = rtrim(strtr(base64_encode((string) $payloadJson), '+/', '-_'), '=');
+
+        $this->actingAs($host)
+            ->get(route('host.bookings.check-in.preview', ['payload' => $encodedPayload]))
+            ->assertOk()
+            ->assertSee($booking->booking_code);
+
+        $this->actingAs($host)
+            ->post(route('host.bookings.check-in.confirm'), ['payload' => $encodedPayload])
+            ->assertRedirect(route('host.bookings.index'))
+            ->assertSessionHas('status');
+
+        $this->assertNotNull($booking->fresh()->checked_in_at);
+    }
+
     public function test_customer_cancel_applies_tiered_fee_and_marks_metadata(): void
     {
         Mail::fake();
