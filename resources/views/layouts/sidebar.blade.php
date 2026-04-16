@@ -1,6 +1,6 @@
 <aside class="flex w-72 shrink-0 flex-col bg-gradient-to-b from-bcom-navy to-bcom-navy-dark text-sky-100 min-h-screen">
     <div class="border-b border-white/15 px-6 py-5">
-        <a href="{{ auth()->user()->role->value === 'customer' ? route('home') : route(auth()->user()->role->dashboardRouteName()) }}" class="flex items-center gap-3">
+        <a href="{{ route(auth()->user()->role->dashboardRouteName()) }}" class="flex items-center gap-3">
             <x-application-logo variant="light" class="h-8 w-8" />
             <div>
                 <p class="font-semibold text-white">{{ config('app.name', 'Booking') }}</p>
@@ -10,77 +10,61 @@
     </div>
 
     <nav class="flex-1 space-y-2 px-4 py-5 text-sm">
-        @if (auth()->user()->role->value !== 'customer')
-            <a href="{{ route(auth()->user()->role->dashboardRouteName()) }}"
-                class="block rounded-lg px-3 py-2 {{ request()->routeIs('*.dashboard') ? 'bg-white/20 font-semibold text-white' : 'text-sky-100 hover:bg-white/10 hover:text-white' }}">
-                {{ __('Bảng điều khiển') }}
-            </a>
-        @else
-            <a href="{{ route('home') }}"
-                class="block rounded-lg px-3 py-2 {{ request()->routeIs('home', 'public.hotels.show') ? 'bg-white/20 font-semibold text-white' : 'text-sky-100 hover:bg-white/10 hover:text-white' }}">
-                {{ __('Trang chủ') }}
-            </a>
-        @endif
+        <x-sidebar.nav-link :href="route(auth()->user()->role->dashboardRouteName())" :active="request()->routeIs('*.dashboard')">
+            {{ __('Bảng điều khiển') }}
+        </x-sidebar.nav-link>
 
         @if (auth()->user()->role->value === 'admin')
-            <a href="{{ route('admin.overview') }}"
-                class="block rounded-lg px-3 py-2 {{ request()->routeIs('admin.overview') ? 'bg-white/20 font-semibold text-white' : 'text-sky-100 hover:bg-white/10 hover:text-white' }}">
+            <x-sidebar.nav-link :href="route('admin.overview')" :active="request()->routeIs('admin.overview')">
                 {{ __('Tổng quan hệ thống') }}
-            </a>
+            </x-sidebar.nav-link>
         @endif
 
         @if (auth()->user()->role->value === 'host')
-            <a href="{{ route('host.hotels.index') }}"
-                class="block rounded-lg px-3 py-2 {{ request()->routeIs('host.hotels.index', 'host.hotels.create', 'host.hotels.edit', 'host.hotels.show') ? 'bg-white/20 font-semibold text-white' : 'text-sky-100 hover:bg-white/10 hover:text-white' }}">
+            <x-sidebar.nav-link :href="route('host.hotels.index')"
+                :active="request()->routeIs('host.hotels.index', 'host.hotels.create', 'host.hotels.edit', 'host.hotels.show')">
                 {{ __('Khách sạn') }}
-            </a>
-            <a href="{{ route('host.rooms.index') }}"
-                class="block rounded-lg px-3 py-2 {{ request()->routeIs('host.rooms.*') ? 'bg-white/20 font-semibold text-white' : 'text-sky-100 hover:bg-white/10 hover:text-white' }}">
+            </x-sidebar.nav-link>
+            <x-sidebar.nav-link :href="route('host.rooms.index')" :active="request()->routeIs('host.rooms.*')">
                 {{ __('Phòng') }}
-            </a>
-            <a href="{{ route('host.bookings.index') }}"
-                class="block rounded-lg px-3 py-2 {{ request()->routeIs('host.bookings.*') ? 'bg-white/20 font-semibold text-white' : 'text-sky-100 hover:bg-white/10 hover:text-white' }}">
+            </x-sidebar.nav-link>
+            <x-sidebar.nav-link :href="route('host.bookings.index')" :active="request()->routeIs('host.bookings.*')">
                 {{ __('Đơn đặt') }}
-            </a>
-            <a href="{{ route('host.availability.index') }}"
-                class="block rounded-lg px-3 py-2 {{ request()->routeIs('host.availability.*') ? 'bg-white/20 font-semibold text-white' : 'text-sky-100 hover:bg-white/10 hover:text-white' }}">
+            </x-sidebar.nav-link>
+            <x-sidebar.nav-link :href="route('host.availability.index')" :active="request()->routeIs('host.availability.*')">
                 {{ __('Lịch khả dụng') }}
-            </a>
-            <a href="{{ route('host.cancellation-policy.edit') }}"
-                class="block rounded-lg px-3 py-2 {{ request()->routeIs('host.cancellation-policy.*') ? 'bg-white/20 font-semibold text-white' : 'text-sky-100 hover:bg-white/10 hover:text-white' }}">
+            </x-sidebar.nav-link>
+            <x-sidebar.nav-link :href="route('host.cancellation-policy.edit')" :active="request()->routeIs('host.cancellation-policy.*')">
                 {{ __('Chính sách hủy') }}
-            </a>
+            </x-sidebar.nav-link>
+            <x-sidebar.nav-link :href="route('host.reports.index')" :active="request()->routeIs('host.reports.*')">
+                {{ __('Báo cáo') }}
+            </x-sidebar.nav-link>
+            <x-sidebar.nav-link :href="route('host.email-templates.index')"
+                :active="request()->routeIs('host.email-templates.*', 'host.hotels.email-templates.*')">
+                {{ __('Mẫu email') }}
+            </x-sidebar.nav-link>
         @endif
 
         @if (auth()->user()->role->value === 'staff')
-            <a href="{{ route('staff.bookings.pending') }}"
-                class="block rounded-lg px-3 py-2 {{ request()->routeIs('staff.bookings.pending') ? 'bg-white/20 font-semibold text-white' : 'text-sky-100 hover:bg-white/10 hover:text-white' }}">
+            <x-sidebar.nav-link :href="route('staff.bookings.pending')" :active="request()->routeIs('staff.bookings.pending')">
                 {{ __('Chờ xử lý') }}
-            </a>
-            <a href="{{ route('staff.bookings.index') }}"
-                class="block rounded-lg px-3 py-2 {{ request()->routeIs('staff.bookings.index') ? 'bg-white/20 font-semibold text-white' : 'text-sky-100 hover:bg-white/10 hover:text-white' }}">
+            </x-sidebar.nav-link>
+            <x-sidebar.nav-link :href="route('staff.bookings.index')" :active="request()->routeIs('staff.bookings.index')">
                 {{ __('Tất cả đơn đặt') }}
-            </a>
-            <a href="{{ route('staff.bookings.history') }}"
-                class="block rounded-lg px-3 py-2 {{ request()->routeIs('staff.bookings.history') ? 'bg-white/20 font-semibold text-white' : 'text-sky-100 hover:bg-white/10 hover:text-white' }}">
+            </x-sidebar.nav-link>
+            <x-sidebar.nav-link :href="route('staff.bookings.history')" :active="request()->routeIs('staff.bookings.history')">
                 {{ __('Lịch sử') }}
-            </a>
-        @endif
-
-        @if (auth()->user()->role->value === 'customer')
-            <a href="{{ route('customer.bookings.index') }}"
-                class="block rounded-lg px-3 py-2 {{ request()->routeIs('customer.bookings.index') ? 'bg-white/20 font-semibold text-white' : 'text-sky-100 hover:bg-white/10 hover:text-white' }}">
-                {{ __('Đơn đặt của tôi') }}
-            </a>
-            <a href="{{ route('customer.bookings.cancellable') }}"
-                class="block rounded-lg px-3 py-2 {{ request()->routeIs('customer.bookings.cancellable') ? 'bg-white/20 font-semibold text-white' : 'text-sky-100 hover:bg-white/10 hover:text-white' }}">
-                {{ __('Có thể hủy') }}
-            </a>
-            <a href="{{ route('customer.bookings.rebook') }}"
-                class="block rounded-lg px-3 py-2 {{ request()->routeIs('customer.bookings.rebook') ? 'bg-white/20 font-semibold text-white' : 'text-sky-100 hover:bg-white/10 hover:text-white' }}">
-                {{ __('Đặt lại') }}
-            </a>
+            </x-sidebar.nav-link>
         @endif
     </nav>
-</aside>
 
+    <div class="mt-auto border-t border-white/15 px-4 py-4">
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button type="submit" class="block w-full rounded-lg px-3 py-2.5 text-start text-sm font-medium text-sky-100 transition hover:bg-white/10 hover:text-white">
+                {{ __('Đăng xuất') }}
+            </button>
+        </form>
+    </div>
+</aside>

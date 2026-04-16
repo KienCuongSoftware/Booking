@@ -78,6 +78,11 @@
                                     {{ $hotel->province ? $hotel->province->type.' '.$hotel->province->name : $hotel->city }}
                                     — {{ $hotel->address }}
                                 </p>
+                                @if ($hotel->reviews_avg_rating)
+                                    <p class="mt-1 text-xs font-semibold text-amber-800">
+                                        ★ {{ number_format((float) $hotel->reviews_avg_rating, 1) }}
+                                    </p>
+                                @endif
                                 <div class="mt-auto flex flex-wrap items-baseline gap-x-2 gap-y-0 border-t border-slate-100 pt-2.5">
                                     @if ($hotel->old_price)
                                         <span class="text-xs text-slate-400 line-through">{{ number_format((float) $hotel->old_price, 0, ',', '.') }}</span>

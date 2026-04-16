@@ -240,6 +240,9 @@
                 <a href="{{ route('host.hotels.edit', $hotel) }}" class="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-bcom-blue hover:bg-sky-50">
                     {{ __('Chỉnh sửa') }}
                 </a>
+                <a href="{{ route('host.hotels.email-templates.edit', $hotel) }}" class="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-sky-50">
+                    {{ __('Mẫu email') }}
+                </a>
             </div>
         </div>
     </div>
