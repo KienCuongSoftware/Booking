@@ -18,8 +18,9 @@ class PayPalWebhookController extends Controller
 
     public function __invoke(Request $request): Response
     {
-        if (! config('booking.payments.paypal.enabled', false)) {
-            return response('PayPal disabled', 400);
+        if (! (string) config('services.paypal.client_id')
+            || ! (string) config('services.paypal.client_secret')) {
+            return response('PayPal not configured', 400);
         }
 
         $payload = $request->all();

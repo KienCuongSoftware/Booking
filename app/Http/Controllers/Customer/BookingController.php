@@ -20,6 +20,7 @@ use App\Services\BookingWaitlistService;
 use App\Services\CancellationFeeService;
 use App\Services\DynamicPricingService;
 use App\Services\IdempotencyService;
+use App\Services\MoMoCheckoutService;
 use App\Services\PayPalCheckoutService;
 use App\Services\RebookSuggestionService;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -45,6 +46,7 @@ class BookingController extends Controller
         private readonly AuditLogService $auditLogService,
         private readonly BookingWaitlistService $bookingWaitlistService,
         private readonly PayPalCheckoutService $payPalCheckoutService,
+        private readonly MoMoCheckoutService $moMoCheckoutService,
     ) {}
 
     public function index(Request $request): View
@@ -201,7 +203,6 @@ class BookingController extends Controller
             'guest_count' => ['required', 'integer', 'min:1', 'max:10'],
             'payment_method' => ['required', 'in:cash,bank_transfer,paypal'],
             'payment_provider' => ['nullable', 'in:momo,paypal'],
-            'payment_reference' => ['nullable', 'string', 'max:120'],
             'customer_note' => ['nullable', 'string', 'max:1000'],
             'promo_code' => ['nullable', 'string', 'max:40'],
             'join_waitlist' => ['nullable', 'boolean'],
@@ -308,12 +309,20 @@ class BookingController extends Controller
 
             $paymentMethod = BookingPaymentMethod::from($validated['payment_method']);
             if ($paymentMethod === BookingPaymentMethod::PayPal) {
-                if (! config('booking.payments.paypal.enabled', false)
-                    || ! (string) config('services.paypal.client_id')
+                if (! (string) config('services.paypal.client_id')
                     || ! (string) config('services.paypal.client_secret')) {
                     throw ValidationException::withMessages([
-                        'payment_method' => __('Thanh toán PayPal đang tắt hoặc chưa cấu hình đủ Client ID / Secret.'),
+                        'payment_method' => __('Thanh toán PayPal chưa cấu hình đủ Client ID / Secret.'),
                     ]);
+                }
+            }
+
+            // Nếu user chọn "Chuyển khoản" nhưng lại chọn "PayPal" làm cổng,
+            // thì vẫn cho redirect sang flow PayPal tương ứng để nút thanh toán hoạt động đúng.
+            if ($paymentMethod === BookingPaymentMethod::BankTransfer) {
+                $requestedProvider = $validated['payment_provider'] ?? null;
+                if ($requestedProvider === BookingPaymentProvider::Paypal->value) {
+                    $paymentMethod = BookingPaymentMethod::PayPal;
                 }
             }
 
@@ -347,7 +356,6 @@ class BookingController extends Controller
                 'payment_method' => $paymentMethod,
                 'payment_provider' => $paymentProvider,
                 'payment_status' => $paymentStatus,
-                'payment_reference' => ($validated['payment_reference'] ?? null) ?: null,
                 'customer_note' => ($validated['customer_note'] ?? null) ?: null,
                 'status_changed_at' => now(),
                 'status_changed_by' => $request->user()->id,
@@ -391,9 +399,28 @@ class BookingController extends Controller
         ], $request);
 
         if ($booking->payment_method === BookingPaymentMethod::PayPal) {
-            $approvalUrl = $this->payPalCheckoutService->createCheckoutApprovalUrl($booking);
-            if ($approvalUrl) {
-                return redirect()->away($approvalUrl);
+            try {
+                $approvalUrl = $this->payPalCheckoutService->createCheckoutApprovalUrl($booking);
+                if ($approvalUrl) {
+                    return redirect()->away($approvalUrl);
+                }
+            } catch (\Throwable $e) {
+                report($e);
+                return redirect()
+                    ->route('customer.bookings.show', $booking)
+                    ->withErrors(['paypal' => __('Không thể tạo thanh toán PayPal. Vui lòng thử lại.')]);
+            }
+        }
+
+        if ($booking->payment_method === BookingPaymentMethod::BankTransfer
+            && $booking->payment_provider === BookingPaymentProvider::Momo) {
+            try {
+                $payUrl = $this->moMoCheckoutService->createCheckoutRedirectUrl($booking);
+                if ($payUrl) {
+                    return redirect()->away($payUrl);
+                }
+            } catch (\Throwable $e) {
+                report($e);
             }
         }
 

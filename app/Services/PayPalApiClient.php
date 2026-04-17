@@ -49,10 +49,10 @@ class PayPalApiClient
     }
 
     /**
-     * @param  array<string, mixed>  $payload
+     * @param  array<string, mixed>|object  $payload
      * @return array<string, mixed>
      */
-    public function postJson(string $path, array $payload): array
+    public function postJson(string $path, mixed $payload): array
     {
         $response = Http::withToken($this->getAccessToken())
             ->withHeaders([

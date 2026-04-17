@@ -91,18 +91,19 @@
 
             @if ($booking->isBankTransferAwaitingReference())
                 <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <h3 class="text-sm font-semibold text-bcom-navy">{{ __('Chuyển khoản / MoMo') }}</h3>
-                    <p class="mt-1 text-xs text-gray-600">{{ __('Sau khi chuyển khoản, nhập mã giao dịch để chủ khách sạn đối soát nhanh hơn.') }}</p>
-                    <form method="POST" action="{{ route('customer.bookings.payment-reference.update', $booking) }}" class="mt-4 space-y-3">
-                        @csrf
-                        @method('PATCH')
-                        <div>
-                            <x-input-label for="payment_reference" :value="__('Mã giao dịch')" />
-                            <x-text-input id="payment_reference" name="payment_reference" type="text" class="mt-1 block w-full" :value="old('payment_reference', $booking->payment_reference)" required />
-                            <x-input-error :messages="$errors->get('payment_reference')" class="mt-2" />
-                        </div>
-                        <x-primary-button>{{ __('Lưu mã giao dịch') }}</x-primary-button>
-                    </form>
+                    @if ($booking->payment_provider === \App\Enums\BookingPaymentProvider::Momo)
+                        <h3 class="text-sm font-semibold text-bcom-navy">{{ __('Thanh toán MoMo') }}</h3>
+                        <p class="mt-1 text-xs text-gray-600">
+                            {{ __('Nhấn nút để qua MoMo thanh toán. Sau khi thanh toán thành công, hệ thống sẽ tự cập nhật trạng thái đơn.') }}
+                        </p>
+                        <a href="{{ route('customer.bookings.pay.momo.resume', $booking) }}"
+                            class="mt-4 inline-flex items-center rounded-xl bg-bcom-blue px-4 py-2.5 text-sm font-semibold text-white hover:bg-bcom-blue/90">
+                            {{ __('Thanh toán MoMo') }}
+                        </a>
+                    @else
+                        <h3 class="text-sm font-semibold text-bcom-navy">{{ __('Chuyển khoản') }}</h3>
+                        <p class="mt-1 text-xs text-gray-600">{{ __('Vui lòng hoàn tất chuyển khoản. Hệ thống sẽ đối soát tự động sau khi nhận webhook/payment từ cổng.') }}</p>
+                    @endif
                 </div>
             @endif
 
@@ -120,10 +121,14 @@
             @endif
 
             <div class="flex flex-wrap gap-3">
-                @if (in_array($booking->status->value, ['confirmed', 'completed'], true))
+                @if (in_array($booking->status->value, ['confirmed'], true))
                     <a href="{{ route('customer.bookings.pass', $booking) }}" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50">
                         {{ __('Vé / QR check-in') }}
                     </a>
+                @elseif ($booking->status->value === 'completed')
+                    <span class="inline-flex items-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700">
+                        {{ __('Đã check-in') }}
+                    </span>
                 @endif
                 @if ($booking->status === \App\Enums\BookingStatus::Completed && ! $booking->review)
                     <a href="{{ route('customer.bookings.review.create', $booking) }}" class="inline-flex items-center rounded-xl bg-bcom-blue px-4 py-2.5 text-sm font-semibold text-white hover:bg-bcom-blue/90">

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\WebhookEvent;
 use App\Services\BookingLedgerService;
+use App\Services\BookingNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -14,6 +15,7 @@ class MoMoWebhookController extends Controller
 {
     public function __construct(
         private readonly BookingLedgerService $bookingLedgerService,
+        private readonly BookingNotificationService $bookingNotificationService,
     ) {}
 
     public function __invoke(Request $request): Response
@@ -61,6 +63,7 @@ class MoMoWebhookController extends Controller
                 ])->save();
 
                 $this->bookingLedgerService->recordMarkedPaid($booking, null);
+                $this->bookingNotificationService->sendCreated($booking);
             }
         }
 

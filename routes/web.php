@@ -25,8 +25,13 @@ use App\Http\Controllers\Webhooks\PayPalWebhookController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [HotelCatalogController::class, 'index'])->name('home');
-Route::get('/hotels/{hotel:slug}', [HotelCatalogController::class, 'show'])->name('public.hotels.show');
+Route::get('/', [HotelCatalogController::class, 'index'])
+    ->middleware(['customer.public'])
+    ->name('home');
+
+Route::get('/hotels/{hotel:slug}', [HotelCatalogController::class, 'show'])
+    ->middleware(['customer.public'])
+    ->name('public.hotels.show');
 
 Route::post('/webhooks/paypal', PayPalWebhookController::class)->name('webhooks.paypal');
 Route::post('/webhooks/momo', MoMoWebhookController::class)->name('webhooks.momo');
@@ -88,7 +93,8 @@ Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->na
     Route::get('/bookings/pay/cancel/{booking}', [CustomerBookingPaymentController::class, 'cancel'])->name('bookings.pay.cancel');
     Route::get('/bookings/{booking}', [CustomerBookingController::class, 'show'])->name('bookings.show');
     Route::get('/bookings/{booking}/pay/paypal', [CustomerBookingPaymentController::class, 'paypalResume'])->name('bookings.pay.paypal.resume');
-    Route::patch('/bookings/{booking}/payment-reference', [CustomerBookingPaymentController::class, 'updatePaymentReference'])->name('bookings.payment-reference.update');
+    Route::get('/bookings/{booking}/pay/momo', [CustomerBookingPaymentController::class, 'momoResume'])->name('bookings.pay.momo.resume');
+    Route::get('/bookings/pay/momo/return', [CustomerBookingPaymentController::class, 'momoReturn'])->name('bookings.pay.momo.return');
     Route::get('/bookings/{booking}/pass', [CustomerBookingPassController::class, 'show'])->name('bookings.pass');
     Route::get('/bookings/{booking}/review', [CustomerReviewController::class, 'create'])->name('bookings.review.create');
     Route::post('/bookings/{booking}/review', [CustomerReviewController::class, 'store'])->name('bookings.review.store');

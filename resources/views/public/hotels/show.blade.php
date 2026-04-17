@@ -236,9 +236,6 @@
                             <select id="payment_method" name="payment_method" class="mt-1 block w-full rounded-xl border-gray-200 text-sm focus:border-bcom-blue focus:ring-bcom-blue/20" required>
                                 <option value="cash" @selected(old('payment_method', 'cash') === 'cash')>{{ __('Tiền mặt') }}</option>
                                 <option value="bank_transfer" @selected(old('payment_method') === 'bank_transfer')>{{ __('Chuyển khoản') }}</option>
-                                @if (config('booking.payments.paypal.enabled') && config('services.paypal.client_id') && config('services.paypal.client_secret'))
-                                    <option value="paypal" @selected(old('payment_method') === 'paypal')>{{ __('PayPal') }}</option>
-                                @endif
                             </select>
                             <x-input-error :messages="$errors->get('payment_method')" class="mt-2" />
                         </div>
@@ -247,7 +244,9 @@
                             <x-input-label for="payment_provider" :value="__('Cổng thanh toán (khi chọn chuyển khoản)')" />
                             <select id="payment_provider" name="payment_provider" class="mt-1 block w-full rounded-xl border-gray-200 text-sm focus:border-bcom-blue focus:ring-bcom-blue/20">
                                 <option value="momo" @selected(old('payment_provider', 'momo') === 'momo')>{{ __('MoMo') }}</option>
-                                <option value="paypal" @selected(old('payment_provider') === 'paypal')>{{ __('PayPal') }}</option>
+                                @if (config('services.paypal.client_id') && config('services.paypal.client_secret'))
+                                    <option value="paypal" @selected(old('payment_provider') === 'paypal')>{{ __('PayPal') }}</option>
+                                @endif
                             </select>
                             <x-input-error :messages="$errors->get('payment_provider')" class="mt-2" />
                         </div>
@@ -261,11 +260,6 @@
                         <div class="sm:col-span-2 flex items-start gap-2">
                             <input id="join_waitlist" type="checkbox" name="join_waitlist" value="1" class="mt-1 rounded border-gray-300 text-bcom-blue focus:ring-bcom-blue" @checked(old('join_waitlist'))>
                             <label for="join_waitlist" class="text-sm text-gray-700">{{ __('Nếu hết chỗ, tự động thêm tôi vào danh sách chờ (email khi có slot).') }}</label>
-                        </div>
-
-                        <div class="sm:col-span-2">
-                            <x-input-label for="payment_reference" :value="__('Mã giao dịch (nếu có)')" />
-                            <x-text-input id="payment_reference" type="text" name="payment_reference" class="mt-1 block w-full" :value="old('payment_reference')" />
                         </div>
 
                         <div class="sm:col-span-2">
@@ -309,7 +303,6 @@
                     const checkOutInput = document.getElementById('check_out_date');
                     const paymentMethodInput = document.getElementById('payment_method');
                     const paymentProviderInput = document.getElementById('payment_provider');
-                    const paymentReferenceInput = document.getElementById('payment_reference');
                     const messageNode = document.getElementById('availability_message');
                     const availabilityUrl = @json(route('customer.hotels.availability', $hotel));
                     let blockedDates = new Set();
@@ -373,12 +366,8 @@
                         paymentProviderInput.required = isBankTransfer;
                         paymentProviderInput.classList.toggle('bg-slate-100', !isBankTransfer);
 
-                        paymentReferenceInput.disabled = !isBankTransfer;
-                        paymentReferenceInput.classList.toggle('bg-slate-100', !isBankTransfer);
-
                         if (!isBankTransfer) {
                             paymentProviderInput.value = 'momo';
-                            paymentReferenceInput.value = '';
                         }
                     };
 

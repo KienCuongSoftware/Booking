@@ -16,12 +16,25 @@ class PayPalCheckoutService
      */
     public function createCheckoutApprovalUrl(Booking $booking): ?string
     {
-        if (! config('booking.payments.paypal.enabled', false)) {
+        if (! (string) config('services.paypal.client_id')
+            || ! (string) config('services.paypal.client_secret')) {
             return null;
         }
 
-        $currency = strtoupper((string) ($booking->currency ?: 'VND'));
-        $value = $this->formatAmount((float) $booking->total_price, $currency);
+        $currencyRaw = strtoupper((string) ($booking->currency ?: 'VND'));
+
+        $amount = (float) $booking->total_price;
+        $currency = $this->normalizeCurrencyForPayPal($currencyRaw);
+
+        // Nếu đổi sang USD (ví dụ VND->USD) thì cũng cần quy đổi để số tiền không bị "quá lớn".
+        if ($currencyRaw === 'VND' && $currency === 'USD') {
+            $rate = (float) env('PAYPAL_VND_TO_USD_RATE', 23000);
+            if ($rate > 0) {
+                $amount = $amount / $rate;
+            }
+        }
+
+        $value = $this->formatAmount($amount, $currency);
 
         $payload = [
             'intent' => 'CAPTURE',
@@ -71,12 +84,20 @@ class PayPalCheckoutService
         return $approveUrl;
     }
 
+    private function normalizeCurrencyForPayPal(string $currencyRaw): string
+    {
+        return match ($currencyRaw) {
+            'VND' => 'USD',
+            default => $currencyRaw,
+        };
+    }
+
     /**
      * @return array{id: string, status: string}
      */
     public function captureOrder(string $orderId): array
     {
-        $result = $this->payPalApiClient->postJson('/v2/checkout/orders/'.$orderId.'/capture', []);
+        $result = $this->payPalApiClient->postJson('/v2/checkout/orders/'.$orderId.'/capture', (object)[]);
 
         $captureId = '';
         $units = $result['purchase_units'] ?? [];
