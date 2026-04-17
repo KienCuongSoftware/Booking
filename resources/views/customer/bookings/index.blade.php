@@ -15,14 +15,14 @@
                     :description="__('Khi bạn đặt phòng, các đơn sẽ hiển thị tại đây.')" />
             @else
                 <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md shadow-slate-900/5">
-                    <div class="overflow-x-auto">
-                        <table class="w-full min-w-[1100px] border-collapse text-left text-sm">
+                    <div class="overflow-hidden">
+                        <table class="w-full min-w-0 table-fixed border-collapse text-left text-sm">
                             <thead class="border-b border-slate-200 bg-sky-50/70 text-xs font-semibold uppercase tracking-wide text-bcom-navy">
                                 <tr>
-                                    <th class="px-4 py-3 whitespace-nowrap">{{ __('STT') }}</th>
+                                    <th class="px-2 py-3 whitespace-nowrap w-10 text-center">{{ __('STT') }}</th>
                                     <th class="px-4 py-3 whitespace-nowrap">{{ __('Mã đơn') }}</th>
                                     <th class="px-4 py-3 whitespace-nowrap">{{ __('Khách sạn / Phòng') }}</th>
-                                    <th class="px-4 py-3 whitespace-nowrap">{{ __('Ngày ở') }}</th>
+                                    <th class="px-4 py-3 whitespace-nowrap w-[220px]">{{ __('Ngày ở') }}</th>
                                     <th class="px-4 py-3 whitespace-nowrap">{{ __('Thanh toán') }}</th>
                                     <th class="px-4 py-3 whitespace-nowrap">{{ __('Trạng thái') }}</th>
                                     <th class="px-4 py-3 text-right whitespace-nowrap">{{ __('Tổng') }}</th>
@@ -32,27 +32,42 @@
                             <tbody class="divide-y divide-slate-100">
                                 @foreach ($bookings as $booking)
                                     <tr class="align-top hover:bg-sky-50/30">
-                                        <td class="px-4 py-4 text-sm font-semibold text-gray-700 whitespace-nowrap">
+                                        <td class="px-2 py-4 w-10 text-sm font-semibold text-gray-700 whitespace-nowrap text-center overflow-hidden text-ellipsis">
                                             {{ ($bookings->firstItem() ?? 1) + $loop->index }}
                                         </td>
-                                        <td class="px-4 py-4">
-                                            <a href="{{ route('customer.bookings.show', $booking) }}" class="font-semibold text-bcom-blue hover:text-bcom-navy">{{ $booking->booking_code }}</a>
-                                            <p class="mt-1 text-xs text-gray-500">{{ $booking->created_at?->format('d/m/Y H:i') }}</p>
+                                        <td class="px-4 py-4 overflow-hidden">
+                                            <a href="{{ route('customer.bookings.show', $booking) }}"
+                                                class="block font-semibold text-bcom-blue hover:text-bcom-navy whitespace-nowrap overflow-hidden text-ellipsis">
+                                                {{ $booking->booking_code }}
+                                            </a>
+                                            <p class="mt-1 text-xs text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis">
+                                                {{ $booking->created_at?->format('d/m/Y H:i') }}
+                                            </p>
                                             @if ($booking->isPayPalCheckoutPending())
-                                                <p class="mt-1 text-xs font-medium text-amber-800">{{ __('Chờ PayPal') }}</p>
+                                                <p class="mt-1 text-xs font-medium text-amber-800 whitespace-nowrap overflow-hidden text-ellipsis">{{ __('Chờ PayPal') }}</p>
                                             @endif
                                         </td>
                                         <td class="px-4 py-4">
-                                            <p class="font-medium text-gray-900">{{ $booking->hotel->name }}</p>
-                                            <p class="mt-1 text-xs text-gray-600">{{ $booking->roomType->name }}</p>
+                                            <p class="font-medium text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis" title="{{ $booking->hotel->name }}">
+                                                {{ $booking->hotel->name }}
+                                            </p>
+                                            <p class="mt-1 text-xs text-gray-600 whitespace-nowrap overflow-hidden text-ellipsis" title="{{ $booking->roomType->name }}">
+                                                {{ $booking->roomType->name }}
+                                            </p>
                                         </td>
-                                        <td class="px-4 py-4 whitespace-nowrap">
-                                            <p>{{ $booking->check_in_date->format('d/m/Y') }} → {{ $booking->check_out_date->format('d/m/Y') }}</p>
-                                            <p class="mt-1 text-xs text-gray-500">{{ $booking->nights }} {{ __('đêm') }} · {{ $booking->guest_count }} {{ __('khách') }}</p>
+                                        <td class="px-4 py-4 w-[220px]">
+                                            <p class="whitespace-normal break-words leading-tight">
+                                                {{ $booking->check_in_date->format('d/m/Y') }} → {{ $booking->check_out_date->format('d/m/Y') }}
+                                            </p>
+                                            <p class="mt-1 text-xs text-gray-500 whitespace-normal break-words leading-tight">
+                                                {{ $booking->nights }} {{ __('đêm') }} · {{ $booking->guest_count }} {{ __('khách') }}
+                                            </p>
                                         </td>
                                         <td class="px-4 py-4">
-                                            <p class="text-gray-800">{{ $booking->payment_method->labelVi() }}</p>
-                                            <p class="mt-1 text-xs text-gray-500">
+                                            <p class="text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis" title="{{ $booking->payment_method->labelVi() }}">
+                                                {{ $booking->payment_method->labelVi() }}
+                                            </p>
+                                            <p class="mt-1 text-xs text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis" title="{{ ($booking->payment_provider?->labelVi() ?? __('Không áp dụng')) . ' · ' . $booking->payment_status->labelVi() }}">
                                                 {{ $booking->payment_provider?->labelVi() ?? __('Không áp dụng') }} · {{ $booking->payment_status->labelVi() }}
                                             </p>
                                         </td>
@@ -63,7 +78,7 @@
                                             @if ($booking->statusEvents->isNotEmpty())
                                                 <div class="mt-3 space-y-1">
                                                     @foreach ($booking->statusEvents->take(3) as $event)
-                                                        <p class="text-xs text-gray-500">
+                                                        <p class="text-xs text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis" title="{{ ($event->actor?->name ?? __('Hệ thống')) }}">
                                                             {{ \Illuminate\Support\Carbon::parse($event->changed_at)->format('d/m H:i') }}
                                                             · {{ \App\Enums\BookingStatus::from($event->to_status)->labelVi() }}
                                                             · {{ $event->actor?->name ?? __('Hệ thống') }}
@@ -76,8 +91,12 @@
                                             {{ number_format((float) $booking->total_price, 0, ',', '.') }} {{ $booking->currency }}
                                         </td>
                                         <td class="px-4 py-4 text-right text-xs whitespace-nowrap">
-                                            @if (in_array($booking->status->value, ['confirmed', 'completed'], true))
+                                            @if ($booking->status->value === 'confirmed')
                                                 <a href="{{ route('customer.bookings.pass', $booking) }}" class="font-semibold text-bcom-blue hover:text-bcom-navy">{{ __('Vé QR') }}</a>
+                                            @elseif ($booking->status->value === 'completed')
+                                                <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                                                    {{ __('Đã check-in') }}
+                                                </span>
                                             @else
                                                 <span class="text-gray-400">{{ __('Chưa có QR') }}</span>
                                             @endif

@@ -14,10 +14,10 @@ class BookingPassController extends Controller
     public function show(Request $request, Booking $booking): View|RedirectResponse
     {
         abort_unless($booking->customer_id === $request->user()->id, 403);
-        if (! in_array($booking->status, [BookingStatus::Confirmed, BookingStatus::Completed], true)) {
+        if ($booking->status !== BookingStatus::Confirmed) {
             return redirect()
                 ->route('customer.bookings.show', $booking)
-                ->withErrors(['pass' => __('Vé QR chỉ khả dụng khi đơn đã được xác nhận hoặc hoàn tất.')]);
+                ->withErrors(['pass' => __('Vé QR chỉ khả dụng khi đơn đã được xác nhận.')]);
         }
 
         $booking->loadMissing(['hotel:id,name,slug', 'roomType:id,name']);

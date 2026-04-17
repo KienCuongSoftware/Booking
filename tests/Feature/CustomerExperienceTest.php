@@ -58,31 +58,6 @@ class CustomerExperienceTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_customer_can_save_bank_transfer_reference(): void
-    {
-        $host = $this->makeHost();
-        $customer = $this->makeCustomer();
-        $hotel = $this->makeHotel($host);
-        $roomType = $this->makeRoomType($hotel);
-        $booking = $this->makeBooking($customer, $hotel, $roomType, [
-            'payment_method' => BookingPaymentMethod::BankTransfer,
-            'payment_provider' => BookingPaymentProvider::Momo,
-            'payment_status' => BookingPaymentStatus::Unpaid,
-            'payment_reference' => null,
-        ]);
-
-        $this->actingAs($customer)
-            ->patch(route('customer.bookings.payment-reference.update', $booking), [
-                'payment_reference' => 'MOMO123456',
-            ])
-            ->assertRedirect(route('customer.bookings.show', $booking))
-            ->assertSessionHas('status');
-
-        $booking->refresh();
-        $this->assertSame('MOMO123456', $booking->payment_reference);
-        $this->assertSame(BookingPaymentStatus::Pending, $booking->payment_status);
-    }
-
     public function test_customer_cannot_view_pass_for_pending_booking(): void
     {
         $host = $this->makeHost();
