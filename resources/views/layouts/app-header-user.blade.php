@@ -4,7 +4,7 @@
     $isCustomer = $user->role->value === 'customer';
 @endphp
 
-<x-dropdown align="right" :width="$isCustomer ? 'full' : '56'" contentClasses="py-1 bg-white">
+<x-dropdown align="right" :width="'full'" contentClasses="py-1 bg-white">
     <x-slot name="trigger">
         <button
             type="button"
@@ -54,6 +54,15 @@
             <x-dropdown-link :href="route('profile.edit')">
                 {{ __('Hồ sơ') }}
             </x-dropdown-link>
+            @if ($user->role->value === 'host')
+                <div class="my-1 border-t border-slate-100"></div>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="block w-full px-4 py-2.5 text-start text-sm leading-5 text-gray-700 hover:bg-sky-50 hover:text-bcom-navy focus:bg-sky-50 focus:outline-none">
+                        {{ __('Đăng xuất') }}
+                    </button>
+                </form>
+            @endif
         @endif
     </x-slot>
 </x-dropdown>
