@@ -26,6 +26,165 @@
                 </div>
             </div>
 
+            <div class="grid gap-4 lg:grid-cols-2">
+                <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div class="border-b border-slate-200 bg-sky-50/60 px-6 py-4">
+                        <h3 class="text-lg font-semibold text-bcom-navy">{{ __('Doanh thu theo tháng') }}</h3>
+                        <p class="mt-1 text-sm text-gray-600">{{ __('Đơn xác nhận/hoàn tất') }}</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="relative h-72 w-full">
+                            <canvas id="revenueBar" class="block w-full"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div class="border-b border-slate-200 bg-sky-50/60 px-6 py-4">
+                        <h3 class="text-lg font-semibold text-bcom-navy">{{ __('Tỉ lệ hủy & no-show theo tháng') }}</h3>
+                        <p class="mt-1 text-sm text-gray-600">{{ __('Tính theo tổng đơn tạo trong tháng') }}</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="relative h-72 w-full">
+                            <canvas id="ratesLine" class="block w-full"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script>
+                const chartLabels = @json($chartLabels ?? []);
+                const revenueSeries = @json($chartRevenueSeries ?? []);
+                const cancelRateSeries = @json($chartCancelRateSeries ?? []);
+                const noShowRateSeries = @json($chartNoShowRateSeries ?? []);
+
+                const formatVnd = (v) => {
+                    try {
+                        return new Intl.NumberFormat('vi-VN').format(v) + ' VND';
+                    } catch (e) {
+                        return v + ' VND';
+                    }
+                };
+
+                // Bar: revenue
+                const revenueCtx = document.getElementById('revenueBar');
+                if (revenueCtx) {
+                    new Chart(revenueCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: chartLabels,
+                            datasets: [{
+                                label: 'Doanh thu (VND)',
+                                data: revenueSeries,
+                                backgroundColor: 'rgba(14, 165, 233, 0.35)',
+                                borderColor: 'rgb(14, 165, 233)',
+                                borderWidth: 1.5,
+                                borderRadius: 10,
+                                barPercentage: 0.7,
+                                categoryPercentage: 0.75
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: { duration: 400 },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    grid: { color: 'rgba(15, 23, 42, 0.08)' },
+                                    ticks: {
+                                        font: { size: 12 },
+                                        callback: (value) => formatVnd(Number(value) || 0).replace(' VND','')
+                                    }
+                                },
+                                x: {
+                                    grid: { display: false },
+                                    ticks: {
+                                        font: { size: 12 },
+                                        maxTicksLimit: 6,
+                                        autoSkip: true
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    mode: 'index',
+                                    intersect: false,
+                                    callbacks: {
+                                        label: (ctx) => formatVnd(ctx.parsed.y ?? 0)
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Line: cancellation & no-show rates
+                const ratesCtx = document.getElementById('ratesLine');
+                if (ratesCtx) {
+                    new Chart(ratesCtx, {
+                        type: 'line',
+                        data: {
+                            labels: chartLabels,
+                            datasets: [
+                                {
+                                    label: 'Tỉ lệ hủy (%)',
+                                    data: cancelRateSeries,
+                                    borderColor: 'rgb(245, 158, 11)',
+                                    backgroundColor: 'rgba(245, 158, 11, 0.18)',
+                                    tension: 0.35,
+                                    pointRadius: 4,
+                                    pointHoverRadius: 5,
+                                    fill: true
+                                },
+                                {
+                                    label: 'Tỉ lệ no-show (%)',
+                                    data: noShowRateSeries,
+                                    borderColor: 'rgb(244, 63, 94)',
+                                    backgroundColor: 'rgba(244, 63, 94, 0.15)',
+                                    tension: 0.35,
+                                    pointRadius: 4,
+                                    pointHoverRadius: 5,
+                                    fill: true
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: { duration: 400 },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    grid: { color: 'rgba(15, 23, 42, 0.08)' },
+                                    ticks: {
+                                        font: { size: 12 },
+                                        callback: (value) => value + '%'
+                                    }
+                                },
+                                x: {
+                                    grid: { display: false },
+                                    ticks: {
+                                        font: { size: 12 },
+                                        maxTicksLimit: 6,
+                                        autoSkip: true
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    labels: { boxWidth: 12, boxHeight: 12, font: { size: 12 } }
+                                }
+                            }
+                        }
+                    });
+                }
+            </script>
+
             <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-200 bg-sky-50/60 px-6 py-4">
                     <h3 class="text-lg font-semibold text-bcom-navy">{{ __('Top loại phòng (theo số đơn)') }}</h3>
