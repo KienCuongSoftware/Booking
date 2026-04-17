@@ -51,9 +51,15 @@
 
             <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 @if ($eligibilityError)
-                    <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                        {{ $eligibilityError }}
-                    </div>
+                    @if ($booking->checked_in_at)
+                        <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+                            {{ __('Đã check-in thành công cho khách.') }}
+                        </div>
+                    @else
+                        <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                            {{ $eligibilityError }}
+                        </div>
+                    @endif
                 @else
                     <p class="text-sm text-gray-700">{{ __('Thông tin hợp lệ. Xác nhận để hoàn tất check-in cho khách.') }}</p>
                     <form method="POST" action="{{ route('host.bookings.check-in.confirm') }}" class="mt-4">
@@ -64,11 +70,6 @@
                         </button>
                     </form>
                 @endif
-            </div>
-
-            <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-gray-600">
-                <p class="font-medium text-gray-800">{{ __('Payload đã quét') }}</p>
-                <pre class="mt-2 overflow-x-auto whitespace-pre-wrap break-all">{{ $payload }}</pre>
             </div>
         </div>
     </div>

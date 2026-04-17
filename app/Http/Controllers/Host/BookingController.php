@@ -40,6 +40,26 @@ class BookingController extends Controller
             $query->where('status', $request->string('status')->value());
         }
 
+        if ($request->filled('search')) {
+            $term = trim((string) $request->string('search')->value());
+
+            if ($term !== '') {
+                $query->where(function ($q) use ($term): void {
+                    $q->where('booking_code', 'like', "%{$term}%")
+                        ->orWhereHas('customer', function ($qc) use ($term): void {
+                            $qc->where('name', 'like', "%{$term}%")
+                                ->orWhere('email', 'like', "%{$term}%");
+                        })
+                        ->orWhereHas('hotel', function ($qh) use ($term): void {
+                            $qh->where('name', 'like', "%{$term}%");
+                        })
+                        ->orWhereHas('roomType', function ($qr) use ($term): void {
+                            $qr->where('name', 'like', "%{$term}%");
+                        });
+                });
+            }
+        }
+
         $bookings = $query->latest('id')->paginate(12)->withQueryString();
 
         return view('host.bookings.index', compact('bookings'));

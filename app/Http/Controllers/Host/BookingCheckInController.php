@@ -89,7 +89,7 @@ class BookingCheckInController extends Controller
         $booking->forceFill(['checked_in_at' => now()])->save();
 
         return redirect()
-            ->route('host.bookings.index')
+            ->route('host.bookings.check-in.preview', ['payload' => $validated['payload']])
             ->with('status', __('Đã xác nhận khách đến cho đơn :code.', ['code' => $booking->booking_code]));
     }
 
@@ -232,8 +232,13 @@ class BookingCheckInController extends Controller
             return __('Đơn đã được check-in trước đó.');
         }
 
-        if ($booking->status !== BookingStatus::Confirmed) {
-            return __('Chỉ có thể check-in đơn ở trạng thái đã xác nhận.');
+        // Cho phép cả "Confirmed" và "Completed" để đồng bộ với QR pass
+        // (QR pass của khách có thể dành cho trạng thái hoàn tất).
+        if (! in_array($booking->status, [BookingStatus::Confirmed, BookingStatus::Completed], true)) {
+            return __(
+                'Không thể check-in ở trạng thái ":status". Chỉ có thể check-in khi đơn ở trạng thái đã xác nhận hoặc hoàn tất.',
+                ['status' => $booking->status->labelVi()]
+            );
         }
 
         $today = Carbon::today();

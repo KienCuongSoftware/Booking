@@ -108,7 +108,7 @@ class BookingLifecycleFlowTest extends TestCase
 
         $this->actingAs($host)
             ->post(route('host.bookings.check-in.confirm'), ['payload' => $encodedPayload])
-            ->assertRedirect(route('host.bookings.index'))
+            ->assertRedirect(route('host.bookings.check-in.preview', ['payload' => $encodedPayload]))
             ->assertSessionHas('status');
 
         $this->assertNotNull($booking->fresh()->checked_in_at);

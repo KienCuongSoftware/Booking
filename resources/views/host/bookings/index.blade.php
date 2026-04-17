@@ -21,7 +21,24 @@
                         <option value="no_show" @selected(request('status') === 'no_show')>{{ __('Không đến') }}</option>
                     </select>
                 </div>
-                <x-primary-button>{{ __('Lọc') }}</x-primary-button>
+                <div class="w-full sm:w-72">
+                    <x-input-label for="search" :value="__('Tìm kiếm')" />
+                    <input
+                        id="search"
+                        name="search"
+                        type="text"
+                        value="{{ request('search') }}"
+                        placeholder="{{ __('Mã đơn / tên / email') }}"
+                        class="mt-1 block w-full rounded-xl border-gray-200 text-sm focus:border-bcom-blue focus:ring-bcom-blue/20 shadow-sm"
+                    >
+                </div>
+
+                <button
+                    type="submit"
+                    class="inline-flex items-center justify-center rounded-lg bg-bcom-blue px-3 py-1.5 text-xs font-semibold text-white hover:bg-bcom-blue/90 focus:outline-none focus:ring-2 focus:ring-bcom-blue focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                    {{ __('Lọc') }}
+                </button>
             </form>
 
             @if ($bookings->isEmpty())
@@ -30,8 +47,8 @@
                 </div>
             @else
                 <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md shadow-slate-900/5">
-                    <div class="overflow-x-auto">
-                        <table class="w-full min-w-[980px] border-collapse text-left text-sm">
+                    <div class="overflow-hidden">
+                        <table class="w-full min-w-0 border-collapse text-left text-sm">
                             <thead class="border-b border-slate-200 bg-sky-50/70 text-xs font-semibold uppercase tracking-wide text-bcom-navy">
                                 <tr>
                                     <th class="px-4 py-3">{{ __('Mã đơn') }}</th>
@@ -47,16 +64,16 @@
                                 @foreach ($bookings as $booking)
                                     <tr class="align-top hover:bg-sky-50/30">
                                         <td class="px-4 py-4">
-                                            <p class="font-semibold text-bcom-navy">{{ $booking->booking_code }}</p>
+                                            <p class="font-semibold text-bcom-navy break-all">{{ $booking->booking_code }}</p>
                                             <p class="mt-1 text-xs text-gray-500">{{ $booking->created_at?->format('d/m/Y H:i') }}</p>
                                         </td>
                                         <td class="px-4 py-4">
                                             <p class="font-medium text-gray-900">{{ $booking->customer->name }}</p>
-                                            <p class="mt-1 text-xs text-gray-600">{{ $booking->customer->email }}</p>
+                                            <p class="mt-1 text-xs text-gray-600 break-all">{{ $booking->customer->email }}</p>
                                         </td>
                                         <td class="px-4 py-4">
-                                            <p class="font-medium text-gray-900">{{ $booking->hotel->name }}</p>
-                                            <p class="mt-1 text-xs text-gray-600">{{ $booking->roomType->name }}</p>
+                                            <p class="font-medium text-gray-900 break-all">{{ $booking->hotel->name }}</p>
+                                            <p class="mt-1 text-xs text-gray-600 break-all">{{ $booking->roomType->name }}</p>
                                         </td>
                                         <td class="px-4 py-4">
                                             <p>{{ $booking->check_in_date->format('d/m/Y') }} → {{ $booking->check_out_date->format('d/m/Y') }}</p>
@@ -67,9 +84,6 @@
                                             <p>{{ $booking->payment_method->labelVi() }}</p>
                                             <p class="mt-1 text-xs text-gray-500">{{ $booking->payment_provider?->labelVi() ?? __('Không áp dụng') }}</p>
                                             <p class="mt-1 text-xs text-gray-500">{{ $booking->payment_status->labelVi() }}</p>
-                                            @if ($booking->payment_reference)
-                                                <p class="mt-1 text-xs text-gray-500">Ref: {{ $booking->payment_reference }}</p>
-                                            @endif
                                         </td>
                                         <td class="px-4 py-4">
                                             <span class="inline-flex rounded-full border px-2 py-0.5 text-xs {{ in_array($booking->status->value, ['cancelled', 'no_show'], true) ? 'border-red-200 bg-red-50 text-red-700' : ($booking->status->value === 'completed' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-sky-200 bg-sky-50 text-bcom-blue') }}">
