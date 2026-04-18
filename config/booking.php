@@ -15,7 +15,7 @@ return [
             'enabled' => (bool) env('BOOKING_PAYPAL_ENABLED', false),
         ],
         'momo_webhook' => [
-            'enabled' => (bool) env('BOOKING_MOMO_WEBHOOK_ENABLED', false),
+            'enabled' => (bool) env('BOOKING_MOMO_WEBHOOK_ENABLED', true),
         ],
     ],
 

@@ -26,6 +26,7 @@ class UserFactory extends Factory
             'avatar' => 'https://i.pravatar.cc/150?u='.fake()->unique()->uuid(),
             'password' => 'password',
             'role' => UserRole::Customer,
+            'is_active' => true,
             'remember_token' => Str::random(10),
         ];
     }

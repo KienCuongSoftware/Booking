@@ -142,6 +142,11 @@ class Booking extends Model
         return $this->hasOne(Review::class);
     }
 
+    public function messages(): HasMany
+    {
+        return $this->hasMany(BookingMessage::class)->orderBy('id');
+    }
+
     public function isPayPalCheckoutPending(): bool
     {
         return $this->status === BookingStatus::Pending
