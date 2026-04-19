@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Public;
 
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\Hotel;
 use App\Models\Province;
@@ -53,7 +54,7 @@ class HotelCatalogController extends Controller
         ]);
     }
 
-    public function show(Hotel $hotel): View
+    public function show(Request $request, Hotel $hotel): View
     {
         abort_unless($hotel->is_active, 404);
 
@@ -69,6 +70,12 @@ class HotelCatalogController extends Controller
 
         $avgRating = $hotel->reviews()->avg('rating');
 
-        return view('public.hotels.show', compact('hotel', 'avgRating'));
+        $isFavorite = false;
+        $user = $request->user();
+        if ($user && $user->role === UserRole::Customer) {
+            $isFavorite = $user->favoriteHotels()->where('hotel_id', $hotel->id)->exists();
+        }
+
+        return view('public.hotels.show', compact('hotel', 'avgRating', 'isFavorite'));
     }
 }

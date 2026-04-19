@@ -18,6 +18,21 @@
             <x-sidebar.nav-link :href="route('admin.overview')" :active="request()->routeIs('admin.overview')">
                 {{ __('Tổng quan hệ thống') }}
             </x-sidebar.nav-link>
+            <x-sidebar.nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
+                {{ __('Người dùng') }}
+            </x-sidebar.nav-link>
+            <x-sidebar.nav-link :href="route('admin.hotels.index')" :active="request()->routeIs('admin.hotels.*')">
+                {{ __('Khách sạn (toàn hệ thống)') }}
+            </x-sidebar.nav-link>
+            <x-sidebar.nav-link :href="route('admin.bookings.index')" :active="request()->routeIs('admin.bookings.*')">
+                {{ __('Đơn đặt (toàn hệ thống)') }}
+            </x-sidebar.nav-link>
+            <x-sidebar.nav-link :href="route('admin.audit-logs.index')" :active="request()->routeIs('admin.audit-logs.*')">
+                {{ __('Nhật ký audit') }}
+            </x-sidebar.nav-link>
+            <x-sidebar.nav-link :href="route('admin.settings')" :active="request()->routeIs('admin.settings')">
+                {{ __('Cấu hình hiệu lực') }}
+            </x-sidebar.nav-link>
         @endif
 
         @if (auth()->user()->role->value === 'host')
@@ -39,6 +54,9 @@
             </x-sidebar.nav-link>
             <x-sidebar.nav-link :href="route('host.reports.index')" :active="request()->routeIs('host.reports.*')">
                 {{ __('Báo cáo') }}
+            </x-sidebar.nav-link>
+            <x-sidebar.nav-link :href="route('host.promo-codes.index')" :active="request()->routeIs('host.promo-codes.*')">
+                {{ __('Mã giảm giá') }}
             </x-sidebar.nav-link>
             <x-sidebar.nav-link :href="route('host.email-templates.index')"
                 :active="request()->routeIs('host.email-templates.*', 'host.hotels.email-templates.*')">

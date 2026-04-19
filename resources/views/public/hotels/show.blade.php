@@ -16,7 +16,19 @@
                 @php $gallery = $hotel->galleryImages; @endphp
 
                 <div class="min-w-0">
-                    <h1 class="text-2xl font-bold text-gray-900 sm:text-3xl">{{ $hotel->name }}</h1>
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <h1 class="text-2xl font-bold text-gray-900 sm:text-3xl">{{ $hotel->name }}</h1>
+                        @auth
+                            @if (auth()->user()->role === \App\Enums\UserRole::Customer)
+                                <form method="POST" action="{{ route('customer.favorites.toggle', $hotel) }}">
+                                    @csrf
+                                    <button type="submit" class="inline-flex items-center rounded-xl border border-slate-200 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-bcom-navy hover:bg-sky-100">
+                                        {{ ($isFavorite ?? false) ? __('★ Đã yêu thích') : __('☆ Yêu thích') }}
+                                    </button>
+                                </form>
+                            @endif
+                        @endauth
+                    </div>
                     <p class="mt-1 text-sm text-gray-600">
                         {{ $hotel->province ? $hotel->province->type.' '.$hotel->province->name : $hotel->city }}
                         — {{ $hotel->address }}
