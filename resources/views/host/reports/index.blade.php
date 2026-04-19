@@ -26,6 +26,16 @@
                 </div>
             </div>
 
+            <div class="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm">
+                <a href="{{ route('host.reports.export.csv') }}" class="font-semibold text-bcom-blue hover:underline">{{ __('Xuất CSV (6 tháng)') }}</a>
+                <span class="text-gray-300">|</span>
+                @if ($showCompare ?? false)
+                    <a href="{{ route('host.reports.index') }}" class="font-semibold text-gray-600 hover:underline">{{ __('Tắt so sánh kỳ') }}</a>
+                @else
+                    <a href="{{ route('host.reports.index', ['compare' => 1]) }}" class="font-semibold text-bcom-blue hover:underline">{{ __('So sánh với 6 tháng trước') }}</a>
+                @endif
+            </div>
+
             <div class="grid gap-4 lg:grid-cols-2">
                 <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <div class="border-b border-slate-200 bg-sky-50/60 px-6 py-4">
@@ -184,6 +194,50 @@
                     });
                 }
             </script>
+
+            @if (! empty($showCompare))
+                <p class="text-sm font-semibold text-bcom-navy">{{ __('So sánh: 6 tháng trước') }}</p>
+                <div class="grid gap-4 lg:grid-cols-2">
+                    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                        <div class="border-b border-slate-200 bg-slate-50 px-6 py-3 text-sm font-semibold text-gray-800">{{ __('Doanh thu (kỳ trước)') }}</div>
+                        <div class="p-6"><div class="relative h-56 w-full"><canvas id="compareRevenueBar"></canvas></div></div>
+                    </div>
+                    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                        <div class="border-b border-slate-200 bg-slate-50 px-6 py-3 text-sm font-semibold text-gray-800">{{ __('Tỉ lệ hủy & no-show (kỳ trước)') }}</div>
+                        <div class="p-6"><div class="relative h-56 w-full"><canvas id="compareRatesLine"></canvas></div></div>
+                    </div>
+                </div>
+                <script>
+                    (function () {
+                        const cLabels = @json($compareChartLabels ?? []);
+                        const cRev = @json($compareChartRevenueSeries ?? []);
+                        const cCan = @json($compareChartCancelRateSeries ?? []);
+                        const cNs = @json($compareChartNoShowRateSeries ?? []);
+                        const el1 = document.getElementById('compareRevenueBar');
+                        if (el1 && typeof Chart !== 'undefined') {
+                            new Chart(el1, {
+                                type: 'bar',
+                                data: { labels: cLabels, datasets: [{ label: 'VND', data: cRev, backgroundColor: 'rgba(100,116,139,0.35)', borderColor: 'rgb(100,116,139)', borderWidth: 1 }] },
+                                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+                            });
+                        }
+                        const el2 = document.getElementById('compareRatesLine');
+                        if (el2 && typeof Chart !== 'undefined') {
+                            new Chart(el2, {
+                                type: 'line',
+                                data: {
+                                    labels: cLabels,
+                                    datasets: [
+                                        { label: 'Hủy %', data: cCan, borderColor: 'rgb(245,158,11)', tension: 0.3, fill: false },
+                                        { label: 'No-show %', data: cNs, borderColor: 'rgb(244,63,94)', tension: 0.3, fill: false }
+                                    ]
+                                },
+                                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } }
+                            });
+                        }
+                    })();
+                </script>
+            @endif
 
             <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-200 bg-sky-50/60 px-6 py-4">

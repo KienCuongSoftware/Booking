@@ -133,6 +133,7 @@
                                                     {{ __('Cập nhật') }}
                                                 </button>
                                             </form>
+                                            <a href="{{ route('host.bookings.messages.index', $booking) }}" class="mt-2 inline-block text-xs font-semibold text-bcom-blue hover:underline">{{ __('Tin nhắn với khách') }}</a>
                                             <form method="POST" action="{{ route('host.bookings.check-in', $booking) }}" class="mt-3 space-y-1">
                                                 @csrf
                                                 <label class="text-xs font-medium text-gray-700" for="checkin_token_{{ $booking->id }}">{{ __('Check-in (QR payload)') }}</label>
