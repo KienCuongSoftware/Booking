@@ -23,15 +23,16 @@ use App\Services\IdempotencyService;
 use App\Services\MoMoCheckoutService;
 use App\Services\PayPalCheckoutService;
 use App\Services\RebookSuggestionService;
+use App\Services\RoomAvailabilityService;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use Illuminate\View\View;
 
 class BookingController extends Controller
 {
@@ -47,6 +48,7 @@ class BookingController extends Controller
         private readonly BookingWaitlistService $bookingWaitlistService,
         private readonly PayPalCheckoutService $payPalCheckoutService,
         private readonly MoMoCheckoutService $moMoCheckoutService,
+        private readonly RoomAvailabilityService $roomAvailabilityService,
     ) {}
 
     public function index(Request $request): View
@@ -98,7 +100,7 @@ class BookingController extends Controller
 
         $windowStart = now()->startOfDay();
         $windowEnd = now()->addDays(180)->startOfDay();
-        $blockedDates = $this->blockedDatesForRoomType($roomType, $windowStart, $windowEnd);
+        $blockedDates = $this->roomAvailabilityService->blockedDatesForRoomType($roomType, $windowStart, $windowEnd);
 
         $response = [
             'blocked_dates' => $blockedDates,
@@ -109,7 +111,7 @@ class BookingController extends Controller
         if (! empty($validated['check_in_date']) && ! empty($validated['check_out_date'])) {
             $checkIn = Carbon::parse($validated['check_in_date'])->startOfDay();
             $checkOut = Carbon::parse($validated['check_out_date'])->startOfDay();
-            $firstBlockedDate = $this->firstBlockedDateInRange($blockedDates, $checkIn, $checkOut);
+            $firstBlockedDate = $this->roomAvailabilityService->firstBlockedDateInRange($blockedDates, $checkIn, $checkOut);
 
             $response['range_available'] = $firstBlockedDate === null;
             $response['first_blocked_date'] = $firstBlockedDate;
@@ -194,6 +196,97 @@ class BookingController extends Controller
             ->with('status', __('Đã hủy đơn đặt. Phí hủy áp dụng: :percent%.', ['percent' => rtrim(rtrim(number_format($fee['fee_percent'], 2, '.', ''), '0'), '.')]));
     }
 
+    public function editDates(Request $request, Booking $booking): View|RedirectResponse
+    {
+        abort_unless($booking->customer_id === $request->user()->id, 403);
+
+        if (! in_array($booking->status, [BookingStatus::Pending, BookingStatus::Confirmed], true)) {
+            return redirect()
+                ->route('customer.bookings.show', $booking)
+                ->withErrors(['dates' => __('Chỉ có thể đổi ngày khi đơn đang chờ xử lý hoặc đã xác nhận.')]);
+        }
+
+        $booking->load(['hotel', 'roomType']);
+
+        return view('customer.bookings.edit-dates', compact('booking'));
+    }
+
+    public function updateDates(Request $request, Booking $booking): RedirectResponse
+    {
+        abort_unless($booking->customer_id === $request->user()->id, 403);
+
+        if (! in_array($booking->status, [BookingStatus::Pending, BookingStatus::Confirmed], true)) {
+            return redirect()
+                ->route('customer.bookings.show', $booking)
+                ->withErrors(['dates' => __('Không thể đổi ngày ở trạng thái hiện tại.')]);
+        }
+
+        $validated = $request->validate([
+            'check_in_date' => ['required', 'date', 'after_or_equal:today'],
+            'check_out_date' => ['required', 'date', 'after:check_in_date'],
+        ]);
+
+        try {
+            DB::transaction(function () use ($booking, $validated, $request): void {
+                $hotel = $booking->hotel;
+                $roomType = RoomType::query()->where('id', $booking->room_type_id)->lockForUpdate()->firstOrFail();
+
+                $checkIn = Carbon::parse($validated['check_in_date'])->startOfDay();
+                $checkOut = Carbon::parse($validated['check_out_date'])->startOfDay();
+
+                $blocked = $this->roomAvailabilityService->blockedDatesForRoomType($roomType, $checkIn, $checkOut, $booking->id);
+                $blockedFirst = $this->roomAvailabilityService->firstBlockedDateInRange($blocked, $checkIn, $checkOut);
+                if ($blockedFirst !== null) {
+                    throw ValidationException::withMessages([
+                        'check_in_date' => __('Không còn phòng trống trong khoảng ngày đã chọn.'),
+                    ]);
+                }
+
+                $nights = $checkIn->diffInDays($checkOut);
+                $pricing = $this->dynamicPricingService->quote($hotel, $roomType, $checkIn, $checkOut);
+                $subtotal = (float) $pricing['subtotal'];
+
+                $discount = 0.0;
+                $promoId = null;
+                if ($booking->promo_code_id) {
+                    $promo = PromoCode::query()->find($booking->promo_code_id);
+                    if ($promo) {
+                        $check = $promo->validateFor($hotel, $roomType, $checkIn, $checkOut);
+                        if ($check['valid']) {
+                            $discount = $promo->discountAmountForSubtotal($subtotal);
+                            $promoId = $promo->id;
+                        }
+                    }
+                }
+
+                $totalPrice = max(0.0, round($subtotal - $discount, 2));
+                $unitPrice = $nights > 0 ? round($totalPrice / $nights, 2) : 0.0;
+
+                $booking->forceFill([
+                    'check_in_date' => $checkIn->toDateString(),
+                    'check_out_date' => $checkOut->toDateString(),
+                    'nights' => $nights,
+                    'unit_price' => $unitPrice,
+                    'total_price' => $totalPrice,
+                    'discount_amount' => $discount,
+                    'promo_code_id' => $promoId,
+                    'pricing_snapshot' => $pricing,
+                ])->save();
+
+                $this->auditLogService->record($booking, 'customer_rescheduled', $request->user(), [
+                    'check_in' => $checkIn->toDateString(),
+                    'check_out' => $checkOut->toDateString(),
+                ], $request);
+            });
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->withInput();
+        }
+
+        return redirect()
+            ->route('customer.bookings.show', $booking)
+            ->with('status', __('Đã cập nhật ngày lưu trú.'));
+    }
+
     public function store(Request $request, Hotel $hotel): RedirectResponse
     {
         $validated = $request->validate([
@@ -250,8 +343,8 @@ class BookingController extends Controller
                 ]);
             }
 
-            $blockedDates = $this->blockedDatesForRoomType($roomType, $checkIn, $checkOut);
-            $firstBlockedDate = $this->firstBlockedDateInRange($blockedDates, $checkIn, $checkOut);
+            $blockedDates = $this->roomAvailabilityService->blockedDatesForRoomType($roomType, $checkIn, $checkOut);
+            $firstBlockedDate = $this->roomAvailabilityService->firstBlockedDateInRange($blockedDates, $checkIn, $checkOut);
             if ($firstBlockedDate !== null) {
                 if ($request->boolean('join_waitlist')) {
                     WaitlistEntry::query()->updateOrCreate(
@@ -437,61 +530,4 @@ class BookingController extends Controller
             ->with('status', __('Đặt phòng thành công. Chủ khách sạn sẽ xử lý đơn của bạn sớm.'));
     }
 
-    /**
-     * @return array<int, string>
-     */
-    private function blockedDatesForRoomType(RoomType $roomType, Carbon $windowStart, Carbon $windowEnd): array
-    {
-        $start = $windowStart->copy()->startOfDay();
-        $end = $windowEnd->copy()->startOfDay();
-
-        $bookings = Booking::query()
-            ->where('room_type_id', $roomType->id)
-            ->whereIn('status', [BookingStatus::Pending->value, BookingStatus::Confirmed->value])
-            ->whereDate('check_in_date', '<', $end->toDateString())
-            ->whereDate('check_out_date', '>', $start->toDateString())
-            ->lockForUpdate()
-            ->get(['check_in_date', 'check_out_date']);
-
-        $occupancyByDay = [];
-        foreach ($bookings as $booking) {
-            $cursor = Carbon::parse($booking->check_in_date)->startOfDay();
-            $checkout = Carbon::parse($booking->check_out_date)->startOfDay();
-            while ($cursor->lt($checkout)) {
-                if ($cursor->gte($start) && $cursor->lt($end)) {
-                    $key = $cursor->toDateString();
-                    $occupancyByDay[$key] = ($occupancyByDay[$key] ?? 0) + 1;
-                }
-                $cursor->addDay();
-            }
-        }
-
-        $blockedDates = [];
-        foreach ($occupancyByDay as $date => $count) {
-            if ($count >= $roomType->quantity) {
-                $blockedDates[] = $date;
-            }
-        }
-
-        sort($blockedDates);
-
-        return $blockedDates;
-    }
-
-    private function firstBlockedDateInRange(array $blockedDates, Carbon $checkIn, Carbon $checkOut): ?string
-    {
-        $blockedMap = array_fill_keys($blockedDates, true);
-        $cursor = $checkIn->copy()->startOfDay();
-        $checkout = $checkOut->copy()->startOfDay();
-
-        while ($cursor->lt($checkout)) {
-            $key = $cursor->toDateString();
-            if (isset($blockedMap[$key])) {
-                return $key;
-            }
-            $cursor->addDay();
-        }
-
-        return null;
-    }
 }

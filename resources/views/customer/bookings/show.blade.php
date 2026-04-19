@@ -120,6 +120,20 @@
                 </div>
             @endif
 
+            <div class="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <a href="{{ route('customer.bookings.messages.index', $booking) }}" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50">
+                    {{ __('Tin nhắn với chủ khách sạn') }}
+                </a>
+                <a href="{{ route('customer.bookings.invoice', $booking) }}" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50">
+                    {{ __('Hóa đơn PDF') }}
+                </a>
+                @if (in_array($booking->status, [\App\Enums\BookingStatus::Pending, \App\Enums\BookingStatus::Confirmed], true))
+                    <a href="{{ route('customer.bookings.edit-dates', $booking) }}" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50">
+                        {{ __('Đổi ngày lưu trú') }}
+                    </a>
+                @endif
+            </div>
+
             <div class="flex flex-wrap gap-3">
                 @if (in_array($booking->status->value, ['confirmed'], true))
                     <a href="{{ route('customer.bookings.pass', $booking) }}" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50">
