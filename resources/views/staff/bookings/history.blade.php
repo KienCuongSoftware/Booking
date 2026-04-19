@@ -1,15 +1,12 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-bcom-navy leading-tight">
-            {{ __('Lịch sử booking') }}
-        </h2>
-    </x-slot>
-
-    <div class="py-10 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-7xl mx-auto">
-            <div class="bg-white border border-slate-200 rounded-2xl shadow-md shadow-slate-900/5 p-8">
-                <p class="text-gray-700">{{ __('Theo dõi lịch sử chuyển trạng thái đơn đặt.') }}</p>
-            </div>
+    <x-slot name="header"><h2 class="text-xl font-semibold text-bcom-navy">{{ __('Lịch sử') }}</h2></x-slot>
+    <div class="py-8 px-4 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-7xl space-y-4">
+            <form method="GET" class="flex flex-wrap gap-2">
+                <input type="text" name="q" value="{{ request('q') }}" class="rounded-xl border-gray-200 text-sm" placeholder="{{ __('Tìm…') }}">
+                <x-primary-button type="submit">{{ __('Lọc') }}</x-primary-button>
+            </form>
+            @include('staff.bookings._table')
         </div>
     </div>
 </x-app-layout>
