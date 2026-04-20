@@ -10,6 +10,17 @@
 
 {{ __('Nếu có nhu cầu, bạn có thể đặt lại ngay từ lịch sử đơn đặt của mình.') }}
 
+@if (! $booking->review()->exists())
+@php
+    $reviewUrl = route('customer.bookings.review.create', $booking, absolute: true);
+@endphp
+{{ __('Nếu bạn chưa đánh giá, hãy dành một phút chia sẻ trải nghiệm của bạn.') }}
+
+<x-mail::button :url="$reviewUrl">
+{{ __('Viết đánh giá') }}
+</x-mail::button>
+@endif
+
 {{ __('Trân trọng,') }}<br>
 {{ config('app.name') }}
 </x-mail::message>

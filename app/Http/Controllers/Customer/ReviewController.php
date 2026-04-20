@@ -12,6 +12,22 @@ use Illuminate\View\View;
 
 class ReviewController extends Controller
 {
+    public function index(Request $request): View
+    {
+        $reviews = Review::query()
+            ->whereHas('booking', fn ($q) => $q->where('customer_id', $request->user()->id))
+            ->with([
+                'booking:id,booking_code,hotel_id,room_type_id,check_in_date,check_out_date',
+                'booking.hotel:id,name,slug',
+                'booking.roomType:id,name',
+            ])
+            ->latest('id')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('customer.reviews.index', compact('reviews'));
+    }
+
     public function create(Request $request, Booking $booking): View|RedirectResponse
     {
         abort_unless($booking->customer_id === $request->user()->id, 403);

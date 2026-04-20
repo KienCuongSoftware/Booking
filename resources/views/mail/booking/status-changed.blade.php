@@ -13,6 +13,17 @@
 {{ __('Số tiền hoàn') }}: **{{ number_format((float) ($booking->refund_amount ?? 0), 0, ',', '.') }} {{ $booking->currency }}**
 @endif
 
+@if ($booking->status->value === 'completed' && ! $booking->review()->exists())
+@php
+    $reviewUrl = route('customer.bookings.review.create', $booking, absolute: true);
+@endphp
+{{ __('Kỳ lưu trú của bạn đã được ghi nhận hoàn tất. Bạn có thể để lại đánh giá giúp khách sạn và khách sau.') }}
+
+<x-mail::button :url="$reviewUrl">
+{{ __('Đánh giá chuyến lưu trú') }}
+</x-mail::button>
+@endif
+
 {{ __('Trân trọng,') }}<br>
 {{ config('app.name') }}
 </x-mail::message>

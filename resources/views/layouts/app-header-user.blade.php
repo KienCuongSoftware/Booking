@@ -35,6 +35,9 @@
             <x-dropdown-link :href="route('customer.bookings.index')" class="{{ request()->routeIs('customer.bookings.index', 'customer.bookings.show', 'customer.bookings.pass', 'customer.bookings.review.*') ? 'bg-sky-50 font-medium text-bcom-navy' : '' }}">
                 {{ __('Đơn đặt của tôi') }}
             </x-dropdown-link>
+            <x-dropdown-link :href="route('customer.reviews.index')" class="{{ request()->routeIs('customer.reviews.*') ? 'bg-sky-50 font-medium text-bcom-navy' : '' }}">
+                {{ __('Đánh giá của tôi') }}
+            </x-dropdown-link>
             <x-dropdown-link :href="route('customer.bookings.cancellable')" class="{{ request()->routeIs('customer.bookings.cancellable') ? 'bg-sky-50 font-medium text-bcom-navy' : '' }}">
                 {{ __('Có thể hủy') }}
             </x-dropdown-link>
