@@ -4,13 +4,13 @@
         <div class="mx-auto max-w-7xl space-y-4">
             <form method="GET" class="flex flex-wrap gap-2">
                 <input type="text" name="action" value="{{ request('action') }}" placeholder="{{ __('Hành động') }}" class="rounded-xl border-gray-200 text-sm">
-                <input type="text" name="subject" value="{{ request('subject') }}" placeholder="{{ __('Subject type') }}" class="rounded-xl border-gray-200 text-sm">
+                <input type="text" name="subject" value="{{ request('subject') }}" placeholder="{{ __('Loại đối tượng') }}" class="rounded-xl border-gray-200 text-sm">
                 <x-primary-button type="submit">{{ __('Lọc') }}</x-primary-button>
             </form>
             <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <table class="w-full min-w-[900px] text-left text-xs">
                     <thead class="border-b bg-sky-50/60 font-semibold uppercase text-bcom-navy">
-                        <tr><th class="px-2 py-2">{{ __('Thời gian') }}</th><th class="px-2 py-2">{{ __('Actor') }}</th><th class="px-2 py-2">{{ __('Hành động') }}</th><th class="px-2 py-2">{{ __('Subject') }}</th><th class="px-2 py-2">{{ __('Chi tiết') }}</th></tr>
+                        <tr><th class="px-2 py-2">{{ __('Thời gian') }}</th><th class="px-2 py-2">{{ __('Người thực hiện') }}</th><th class="px-2 py-2">{{ __('Hành động') }}</th><th class="px-2 py-2">{{ __('Đối tượng') }}</th><th class="px-2 py-2">{{ __('Chi tiết') }}</th></tr>
                     </thead>
                     <tbody class="divide-y">
                         @foreach ($logs as $log)

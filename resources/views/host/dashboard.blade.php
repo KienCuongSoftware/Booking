@@ -33,7 +33,7 @@
                 <a href="{{ route('host.reports.index') }}"
                     class="rounded-2xl border border-slate-200 bg-sky-50/50 p-5 transition hover:border-bcom-blue/30 hover:shadow-md">
                     <p class="text-sm text-gray-600">{{ __('Hiệu suất') }}</p>
-                    <p class="mt-1 text-sm font-medium text-bcom-blue">{{ __('Doanh thu, hủy, no-show và top phòng') }}</p>
+                    <p class="mt-1 text-sm font-medium text-bcom-blue">{{ __('Doanh thu, hủy, không đến và nhóm phòng nổi bật') }}</p>
                 </a>
             </div>
         </div>

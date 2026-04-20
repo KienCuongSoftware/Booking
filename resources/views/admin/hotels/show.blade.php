@@ -25,7 +25,7 @@
                             <dd class="mt-0.5 text-gray-700">{{ $hotel->host?->name }} <span class="text-gray-500">({{ $hotel->host?->email }})</span></dd>
                         </div>
                         <div>
-                            <dt class="font-semibold text-bcom-navy">{{ __('Slug') }}</dt>
+                            <dt class="font-semibold text-bcom-navy">{{ __('Định danh URL') }}</dt>
                             <dd class="mt-0.5 font-mono text-xs text-gray-700">{{ $hotel->slug }}</dd>
                         </div>
                         <div>
@@ -195,7 +195,7 @@
                             <thead class="border-b border-slate-200 bg-white text-xs font-semibold uppercase tracking-wide text-bcom-navy">
                                 <tr>
                                     <th class="px-4 py-3">{{ __('Loại phòng') }}</th>
-                                    <th class="px-4 py-3">{{ __('Slug') }}</th>
+                                    <th class="px-4 py-3">{{ __('Định danh URL') }}</th>
                                     <th class="px-4 py-3">{{ __('Diện tích') }}</th>
                                     <th class="px-4 py-3">{{ __('Khách tối đa') }}</th>
                                     <th class="px-4 py-3">{{ __('Giá / đêm') }}</th>

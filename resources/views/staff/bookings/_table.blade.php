@@ -30,7 +30,7 @@
                                     @elseif ($booking->status->value === 'confirmed')
                                         <option value="completed">{{ __('Hoàn tất') }}</option>
                                         <option value="cancelled">{{ __('Hủy') }}</option>
-                                        <option value="no_show">{{ __('No-show') }}</option>
+                                        <option value="no_show">{{ __('Không đến') }}</option>
                                     @else
                                         <option value="" disabled selected>{{ __('—') }}</option>
                                     @endif
