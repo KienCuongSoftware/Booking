@@ -37,8 +37,9 @@ class BookingPassController extends Controller
             ?: ($booking->booking_code.'|'.$booking->check_in_token);
         $encodedPayload = rtrim(strtr(base64_encode($payload), '+/', '-_'), '=');
         $checkInUrl = route('check-in.entry', ['payload' => $encodedPayload], true);
+        $guestInfoUrl = route('check-in.guest', ['payload' => $encodedPayload], true);
         $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='.rawurlencode($checkInUrl);
 
-        return view('customer.bookings.pass', compact('booking', 'qrUrl', 'payload', 'checkInUrl'));
+        return view('customer.bookings.pass', compact('booking', 'qrUrl', 'payload', 'checkInUrl', 'guestInfoUrl'));
     }
 }

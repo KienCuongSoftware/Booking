@@ -15,10 +15,11 @@
                 </p>
                 <div class="mt-6 flex flex-col items-center gap-3">
                     <img src="{{ $qrUrl }}" width="220" height="220" alt="QR" class="rounded-lg border border-slate-200 bg-white p-2">
-                    <p class="text-center text-xs text-gray-500">{{ __('Chủ khách sạn quét mã để nhận đủ thông tin đơn và xác nhận check-in.') }}</p>
+                    <p class="text-center text-xs text-gray-500">{{ __('Mã QR: chủ khách sạn đăng nhập tài khoản host rồi quét để mở trang xác nhận check-in. Liên kết “cho khách / lễ tân” không cần đăng nhập — chỉ để đối chiếu thông tin đơn.') }}</p>
                     <p class="text-center text-[11px] text-gray-500">
-                        {{ __('Mã QR mở trực tiếp trang xác nhận') }}:
-                        <a href="{{ $checkInUrl }}" class="font-medium text-bcom-blue hover:underline">{{ __('Mở trang check-in') }}</a>
+                        <a href="{{ $guestInfoUrl }}" class="font-medium text-bcom-blue hover:underline">{{ __('Trang thông tin cho khách / lễ tân') }}</a>
+                        <span class="mx-1 text-gray-400">·</span>
+                        <a href="{{ $checkInUrl }}" class="font-medium text-bcom-blue hover:underline">{{ __('Trang check-in (host đã đăng nhập)') }}</a>
                     </p>
                     <details class="w-full rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-gray-700">
                         <summary class="cursor-pointer font-medium text-bcom-navy">{{ __('Hiển thị payload QR (dự phòng)') }}</summary>
