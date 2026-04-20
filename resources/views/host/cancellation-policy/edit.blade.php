@@ -9,12 +9,13 @@
         <div class="max-w-5xl mx-auto space-y-6">
             <x-flash-status />
 
+            <div id="hostCancellationPolicyRoot">
             @if ($hotels->isEmpty())
                 <div class="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-gray-600">
                     {{ __('Bạn chưa có khách sạn để cấu hình chính sách.') }}
                 </div>
             @else
-                <form method="GET" class="rounded-2xl border border-slate-200 bg-white p-4">
+                <form method="GET" class="rounded-2xl border border-slate-200 bg-white p-4" data-ajax-filter-form data-ajax-target="#hostCancellationPolicyRoot">
                     <label class="text-sm font-medium text-gray-700" for="hotel_id">{{ __('Chọn khách sạn') }}</label>
                     <div class="mt-2 flex items-center gap-3">
                         <select id="hotel_id" name="hotel_id" class="w-full rounded-lg border-gray-200 text-sm focus:border-bcom-blue focus:ring-bcom-blue/20">
@@ -39,20 +40,20 @@
                     <div class="grid gap-3 sm:grid-cols-3">
                         <label class="inline-flex items-center gap-2 rounded-lg border border-slate-200 p-3 text-sm text-gray-700">
                             <input type="checkbox" name="send_reminder_d3" value="1" class="rounded border-gray-300 text-bcom-blue focus:ring-bcom-blue" @checked(old('send_reminder_d3', $policy?->send_reminder_d3 ?? true))>
-                            {{ __('Reminder D-3') }}
+                            {{ __('Nhắc lịch D-3') }}
                         </label>
                         <label class="inline-flex items-center gap-2 rounded-lg border border-slate-200 p-3 text-sm text-gray-700">
                             <input type="checkbox" name="send_reminder_d1" value="1" class="rounded border-gray-300 text-bcom-blue focus:ring-bcom-blue" @checked(old('send_reminder_d1', $policy?->send_reminder_d1 ?? true))>
-                            {{ __('Reminder D-1') }}
+                            {{ __('Nhắc lịch D-1') }}
                         </label>
                         <label class="inline-flex items-center gap-2 rounded-lg border border-slate-200 p-3 text-sm text-gray-700">
                             <input type="checkbox" name="send_reminder_h6" value="1" class="rounded border-gray-300 text-bcom-blue focus:ring-bcom-blue" @checked(old('send_reminder_h6', $policy?->send_reminder_h6 ?? true))>
-                            {{ __('Reminder H-6') }}
+                            {{ __('Nhắc lịch H-6') }}
                         </label>
                     </div>
 
                     <div>
-                        <p class="text-sm font-semibold text-bcom-navy">{{ __('Tier phí hủy') }}</p>
+                        <p class="text-sm font-semibold text-bcom-navy">{{ __('Bậc phí hủy') }}</p>
                         <p class="mt-1 text-xs text-gray-500">{{ __('Mỗi dòng là một mốc giờ trước check-in.') }}</p>
                         <div class="mt-3 overflow-x-auto rounded-lg border border-slate-200">
                             @php
@@ -124,6 +125,7 @@
                     </div>
                 </form>
             @endif
+            </div>
         </div>
     </div>
 </x-app-layout>
