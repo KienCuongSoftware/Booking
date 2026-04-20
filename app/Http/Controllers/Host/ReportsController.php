@@ -6,12 +6,14 @@ use App\Enums\BookingStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\RoomType;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportsController extends Controller
 {
@@ -138,6 +140,37 @@ class ReportsController extends Controller
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
+    }
+
+    public function exportPdf(Request $request): Response
+    {
+        $hostId = $request->user()->id;
+        $hotelIds = DB::table('hotels')->where('host_id', $hostId)->pluck('id');
+
+        $monthsCount = 6;
+        $start = now()->copy()->subMonths($monthsCount - 1)->startOfMonth();
+        $end = now()->copy()->endOfMonth();
+        $chart = $this->buildMonthlyChart($hotelIds, $start, $monthsCount);
+
+        $bookings = Booking::query()
+            ->whereIn('hotel_id', $hotelIds)
+            ->whereBetween('created_at', [$start, $end])
+            ->with(['hotel:id,name', 'roomType:id,name'])
+            ->orderBy('id')
+            ->get();
+
+        $pdf = Pdf::loadView('host.reports.pdf', [
+            'chartLabels' => $chart['chartLabels'],
+            'chartRevenueSeries' => $chart['chartRevenueSeries'],
+            'chartCancelRateSeries' => $chart['chartCancelRateSeries'],
+            'chartNoShowRateSeries' => $chart['chartNoShowRateSeries'],
+            'bookings' => $bookings,
+            'generatedAt' => now()->timezone(config('app.timezone'))->format('d/m/Y H:i'),
+        ]);
+
+        $filename = 'bao-cao-'.now()->format('Y-m-d').'.pdf';
+
+        return $pdf->download($filename);
     }
 
     /**

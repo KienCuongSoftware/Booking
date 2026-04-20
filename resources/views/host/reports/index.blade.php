@@ -17,7 +17,7 @@
                     <p class="mt-2 text-2xl font-bold text-amber-800">{{ $cancelRate }}%</p>
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Tỉ lệ no-show') }}</p>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Tỉ lệ không đến') }}</p>
                     <p class="mt-2 text-2xl font-bold text-rose-800">{{ $noShowRate }}%</p>
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -28,6 +28,8 @@
 
             <div class="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm">
                 <a href="{{ route('host.reports.export.csv') }}" class="font-semibold text-bcom-blue hover:underline">{{ __('Xuất CSV (6 tháng)') }}</a>
+                <span class="text-gray-300">|</span>
+                <a href="{{ route('host.reports.export.pdf') }}" class="font-semibold text-bcom-blue hover:underline">{{ __('Xuất PDF (6 tháng)') }}</a>
                 <span class="text-gray-300">|</span>
                 @if ($showCompare ?? false)
                     <a href="{{ route('host.reports.index') }}" class="font-semibold text-gray-600 hover:underline">{{ __('Tắt so sánh kỳ') }}</a>
@@ -51,7 +53,7 @@
 
                 <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <div class="border-b border-slate-200 bg-sky-50/60 px-6 py-4">
-                        <h3 class="text-lg font-semibold text-bcom-navy">{{ __('Tỉ lệ hủy & no-show theo tháng') }}</h3>
+                        <h3 class="text-lg font-semibold text-bcom-navy">{{ __('Tỉ lệ hủy & không đến theo tháng') }}</h3>
                         <p class="mt-1 text-sm text-gray-600">{{ __('Tính theo tổng đơn tạo trong tháng') }}</p>
                     </div>
                     <div class="p-6">
@@ -131,7 +133,7 @@
                     });
                 }
 
-                // Line: cancellation & no-show rates
+                // Biểu đồ đường: tỉ lệ hủy và không đến
                 const ratesCtx = document.getElementById('ratesLine');
                 if (ratesCtx) {
                     new Chart(ratesCtx, {
@@ -150,7 +152,7 @@
                                     fill: true
                                 },
                                 {
-                                    label: 'Tỉ lệ no-show (%)',
+                                    label: 'Tỉ lệ không đến (%)',
                                     data: noShowRateSeries,
                                     borderColor: 'rgb(244, 63, 94)',
                                     backgroundColor: 'rgba(244, 63, 94, 0.15)',
@@ -203,7 +205,7 @@
                         <div class="p-6"><div class="relative h-56 w-full"><canvas id="compareRevenueBar"></canvas></div></div>
                     </div>
                     <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                        <div class="border-b border-slate-200 bg-slate-50 px-6 py-3 text-sm font-semibold text-gray-800">{{ __('Tỉ lệ hủy & no-show (kỳ trước)') }}</div>
+                        <div class="border-b border-slate-200 bg-slate-50 px-6 py-3 text-sm font-semibold text-gray-800">{{ __('Tỉ lệ hủy & không đến (kỳ trước)') }}</div>
                         <div class="p-6"><div class="relative h-56 w-full"><canvas id="compareRatesLine"></canvas></div></div>
                     </div>
                 </div>
@@ -229,7 +231,7 @@
                                     labels: cLabels,
                                     datasets: [
                                         { label: 'Hủy %', data: cCan, borderColor: 'rgb(245,158,11)', tension: 0.3, fill: false },
-                                        { label: 'No-show %', data: cNs, borderColor: 'rgb(244,63,94)', tension: 0.3, fill: false }
+                                        { label: 'Không đến %', data: cNs, borderColor: 'rgb(244,63,94)', tension: 0.3, fill: false }
                                     ]
                                 },
                                 options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } }
@@ -241,7 +243,7 @@
 
             <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-200 bg-sky-50/60 px-6 py-4">
-                    <h3 class="text-lg font-semibold text-bcom-navy">{{ __('Top loại phòng (theo số đơn)') }}</h3>
+                    <h3 class="text-lg font-semibold text-bcom-navy">{{ __('Nhóm đầu loại phòng (theo số đơn)') }}</h3>
                 </div>
                 <div class="p-6">
                     @if ($topRoomTypes->isEmpty())
