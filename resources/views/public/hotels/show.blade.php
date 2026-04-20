@@ -1,4 +1,11 @@
-<x-public-layout :title="$hotel->name" :description="\Illuminate\Support\Str::limit(strip_tags($hotel->description ?? ''), 160)">
+<x-public-layout
+    :title="$hotel->name"
+    :description="\Illuminate\Support\Str::limit(strip_tags($hotel->description ?? ''), 160)"
+    :og-title="$ogTitle ?? null"
+    :og-description="$ogDescription ?? null"
+    :og-image="$ogImage ?? null"
+    :canonical-url="$canonicalUrl ?? null"
+>
     <div class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         @if (session('status'))
             <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
@@ -40,7 +47,12 @@
                         <span class="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-900">{{ $hotel->star_rating }}★</span>
                     @endif
                     @if (! empty($avgRating))
-                        <span class="inline-flex rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-xs font-semibold text-bcom-navy">{{ __('Đánh giá') }}: {{ number_format((float) $avgRating, 1) }}★</span>
+                        <span class="inline-flex rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-xs font-semibold text-bcom-navy">
+                            {{ __('Đánh giá') }}: {{ number_format((float) $avgRating, 1) }}★
+                            @if (($hotel->reviews_count ?? 0) > 0)
+                                <span class="font-normal text-sky-800/90">({{ $hotel->reviews_count }} {{ __('lượt') }})</span>
+                            @endif
+                        </span>
                     @endif
                     @if ($hotel->old_price)
                         <p class="text-gray-500"><span class="line-through">{{ number_format((float) $hotel->old_price, 0, ',', '.') }} VND</span></p>

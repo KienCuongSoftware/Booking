@@ -4,15 +4,29 @@ namespace App\Http\Controllers\Public;
 
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use App\Models\Amenity;
 use App\Models\Hotel;
 use App\Models\Province;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class HotelCatalogController extends Controller
 {
     public function index(Request $request): View
     {
+        $selectedAmenityIds = collect((array) $request->input('amenity_ids', []))
+            ->filter(fn ($id): bool => is_numeric($id))
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->values();
+
+        $minPrice = $request->filled('min_price') ? max(0, (int) $request->integer('min_price')) : null;
+        $maxPrice = $request->filled('max_price') ? max(0, (int) $request->integer('max_price')) : null;
+        if ($minPrice !== null && $maxPrice !== null && $minPrice > $maxPrice) {
+            [$minPrice, $maxPrice] = [$maxPrice, $minPrice];
+        }
+
         $query = Hotel::query()
             ->where('is_active', true)
             ->with('province')
@@ -34,6 +48,19 @@ class HotelCatalogController extends Controller
             }
         }
 
+        if ($minPrice !== null) {
+            $query->whereRaw('COALESCE(new_price, base_price) >= ?', [$minPrice]);
+        }
+        if ($maxPrice !== null) {
+            $query->whereRaw('COALESCE(new_price, base_price) <= ?', [$maxPrice]);
+        }
+
+        if ($selectedAmenityIds->isNotEmpty()) {
+            foreach ($selectedAmenityIds as $amenityId) {
+                $query->whereHas('amenities', fn ($q) => $q->where('amenities.id', $amenityId));
+            }
+        }
+
         $sort = $request->string('sort', 'newest')->value();
         match ($sort) {
             'price_asc' => $query->orderByRaw('COALESCE(new_price, base_price) ASC')->orderBy('name'),
@@ -47,10 +74,29 @@ class HotelCatalogController extends Controller
         $provinces = Province::query()
             ->orderBy('name')
             ->get(['code', 'name', 'type']);
+        $amenities = Amenity::query()
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+        $savedHotelIds = collect((array) $request->session()->get('guest_saved_hotel_ids', []))
+            ->filter(fn ($id): bool => is_numeric($id))
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
 
         return view('public.hotels.index', [
             'hotels' => $hotels,
             'provinces' => $provinces,
+            'amenities' => $amenities,
+            'savedHotelIds' => $savedHotelIds,
+            'selectedAmenityIds' => $selectedAmenityIds->all(),
+            'minPrice' => $minPrice,
+            'maxPrice' => $maxPrice,
+            'ogTitle' => config('app.name').' — '.__('Tìm khách sạn'),
+            'ogDescription' => __('Chỉ hiển thị khách sạn đang mở. Đặt phòng theo ngày.'),
+            'ogImage' => asset('ico.svg'),
+            'canonicalUrl' => url()->current(),
         ]);
     }
 
@@ -68,6 +114,7 @@ class HotelCatalogController extends Controller
             'roomTypes.images',
         ]);
 
+        $hotel->loadCount('reviews');
         $avgRating = $hotel->reviews()->avg('rating');
 
         $isFavorite = false;
@@ -76,6 +123,14 @@ class HotelCatalogController extends Controller
             $isFavorite = $user->favoriteHotels()->where('hotel_id', $hotel->id)->exists();
         }
 
-        return view('public.hotels.show', compact('hotel', 'avgRating', 'isFavorite'));
+        return view('public.hotels.show', [
+            'hotel' => $hotel,
+            'avgRating' => $avgRating,
+            'isFavorite' => $isFavorite,
+            'ogTitle' => $hotel->name,
+            'ogDescription' => Str::limit(strip_tags($hotel->description ?? ''), 160),
+            'ogImage' => $hotel->thumbnailUrl(),
+            'canonicalUrl' => route('public.hotels.show', $hotel, absolute: true),
+        ]);
     }
 }
