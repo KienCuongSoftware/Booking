@@ -1,6 +1,6 @@
 # Booking
 
-A **Laravel 12** accommodation-booking web application: **PHP 8.2**, MySQL (or any Laravel-supported database), **Vite**, **Tailwind CSS**, and **Alpine.js**. **Laravel Breeze**-style authentication with **role-based areas** for **admin**, **host**, **staff**, and **customer**. Hosts manage **hotels** (thumbnail + gallery, provinces, address, pricing, **hotel-level amenities**) and **room types** (capacity, inventory, **floor area (m²)**, bed configuration lines, **room-level amenities**, images). Reference data is **seeded** (provinces, amenities). **Google OAuth** (Socialite), **email OTP** after registration, and **password change** guarded by **OTP** are supported where configured. UI uses a **sidebar shell** for authenticated areas, Tailwind pagination defaults, and flash messages. **Public catalog** at **`/`** lists **active** hotels (filter by **province**, **keyword**, **sort**); **`/hotels/{slug}`** shows gallery, description, amenities, and **active room types** (no auth). Suitable as a **course / portfolio** project (e.g. developed on **XAMPP**); **date-based booking** can be added next.
+A **Laravel 12** hotel booking monolith: **PHP 8.2**, MySQL (or any Laravel-supported database), **Vite**, **Tailwind CSS**, and **Alpine.js**. **Laravel Breeze**-style session auth with **roles**: **admin**, **host**, **staff**, and **customer**. Hosts manage **hotels** (thumbnail + gallery, provinces, pricing, amenities, email templates) and **room types** (inventory, area, beds, amenities, images). Customers browse the **public catalog**, **book by date**, pay via **PayPal** or **MoMo** (when enabled), manage **waitlists**, **favorites**, **messages**, **reviews**, and **invoices (PDF)**. **Google OAuth**, **email OTP after registration**, and **OTP-guarded password change** are supported when mail is configured. **Laravel Sanctum** exposes a small **REST API** under `/api/v1`. UI uses **sidebar** (admin/host/staff), **customer header** on public + customer flows, and **flash** feedback.
 
 **Repository:** [https://github.com/KienCuongSoftware/Booking](https://github.com/KienCuongSoftware/Booking)
 
@@ -8,8 +8,8 @@ A **Laravel 12** accommodation-booking web application: **PHP 8.2**, MySQL (or a
 
 - **PHP** ^8.2  
 - **Composer**  
-- **Node.js** and **npm** (for Vite / Tailwind assets)  
-- **MySQL** (or any Laravel-supported database)
+- **Node.js** and **npm** (Vite / Tailwind)  
+- **MySQL** (or SQLite / PostgreSQL per Laravel)
 
 ## Installation
 
@@ -33,14 +33,17 @@ A **Laravel 12** accommodation-booking web application: **PHP 8.2**, MySQL (or a
    php artisan key:generate
    ```
 
-   Set `DB_*` in `.env`.
+   Configure `DB_*` and feature flags (see table below).
 
-   | Feature | `.env` keys |
-   |--------|-------------|
+   | Area | `.env` keys (examples) |
+   |------|-------------------------|
    | Database | `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` |
-   | **Google login** | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` (default combines `APP_URL` + `/auth/google/callback`) |
-   | **Email (registration OTP, password OTP, verification)** | `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` — use an **app password** for Gmail if applicable |
-   | **Queues** (if you dispatch queued jobs / mail) | `QUEUE_CONNECTION` — `database` is set in `.env.example`; run `php artisan queue:work` or use `composer run dev` |
+   | **Google login** | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` |
+   | **Mail** (OTP register, password OTP, reminders, status emails) | `MAIL_*`, `MAIL_FROM_*` |
+   | **Queues** | `QUEUE_CONNECTION` — use `database` + `php artisan queue:work` or `composer run dev` |
+   | **PayPal** | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_MODE` |
+   | **MoMo** | `MOMO_ENDPOINT`, `MOMO_PARTNER_CODE`, `MOMO_ACCESS_KEY`, `MOMO_SECRET_KEY` |
+   | **Booking / platform** | `BOOKING_*` — see `.env.example` (dynamic pricing, hold TTL, PayPal/MoMo toggles, reminders, audit, idempotency, pending SLA) |
 
 4. **Migrations**
 
@@ -48,30 +51,35 @@ A **Laravel 12** accommodation-booking web application: **PHP 8.2**, MySQL (or a
    php artisan migrate
    ```
 
-5. **Storage link** (hotel thumbnails, galleries, room-type images)
+5. **Storage link** (thumbnails, galleries, room images)
 
    ```bash
    php artisan storage:link
    ```
 
-   Uploaded files under `storage/app/public/` are served at **`/storage/...`** (see `App\Support\PublicDisk`).
+   Public URLs use `App\Support\PublicDisk` and `/storage/...`.
 
-6. **(Optional) Seed data**
+6. **Seed data (optional)**
 
-   Seeds **provinces**, **hotel amenities**, **room amenities**, and (if present) **`UserSeeder`** demo users — adjust `DatabaseSeeder` to match your needs.
+   Default `DatabaseSeeder` loads provinces, amenities, demo users, cancellation policy samples, and demo bookings (adjust in `database/seeders/DatabaseSeeder.php`).
 
    ```bash
    php artisan db:seed
    ```
 
-7. **Frontend build**
+   **Extra seeders (run explicitly):**
+
+   - `php artisan db:seed --class=ReportsChartDemoSeeder` — chart/demo bookings (`RDEMO-*`, `reports-demo-*@example.test`).
+   - `php artisan db:seed --class=RealisticMassDataSeeder` — large synthetic load (`RSIM-*`, `khach.*@sim-booking.local`, `PCODE-SIM-*`); see comments in that class for `REALISTIC_SIM_*` env limits.
+
+7. **Frontend**
 
    ```bash
    npm install
    npm run build
    ```
 
-   For local development with hot reload, use `npm run dev` (see **Running** below).
+   For HMR: `npm run dev` (or `composer run dev`).
 
 ## Running
 
@@ -79,80 +87,98 @@ A **Laravel 12** accommodation-booking web application: **PHP 8.2**, MySQL (or a
 php artisan serve
 ```
 
-Open `http://127.0.0.1:8000` (or the URL Artisan prints).
-
 ### Development (server + queue + logs + Vite)
 
 ```bash
 composer run dev
 ```
 
-Runs `php artisan serve`, `queue:listen`, `pail`, and `npm run dev` via **Concurrently**.
+## What’s in the system
 
-## Features
+### Public (no account)
 
-### Public catalog (guest)
-
-- **`GET /`** — Paginated hotel cards; query params: `q`, `province_code`, `sort` (`newest`, `price_asc`, `price_desc`, `name`).
-- **`GET /hotels/{slug}`** — Hotel detail resolved by **globally unique** `hotels.slug`; inactive hotels return **404**.
+- **`GET /`** — Active hotels: filters `q`, `province_code`, `sort` (`newest`, `price_asc`, `price_desc`, `name`); **average rating** on cards when available.
+- **`GET /hotels/{slug}`** — Detail: gallery, description, amenities, **rating + review count**, room types; **favorite** toggle for signed-in customers.
+- **Legal** — `/legal/cancellation-refunds`, `/legal/privacy`, `/legal/terms` (footer on public + guest layouts).
+- **SEO** — `/sitemap.xml`, `/robots.txt`; **Open Graph / Twitter** meta and **canonical** URL on catalog pages via `public-layout`.
+- **Guest check-in info** — `GET /check-in/guest?payload=…` (throttled): minimal booking summary for front desk (token-validated).
 
 ### Authentication & profile
 
-- **Register** → **email OTP verification** flow (`register/verify`, resend throttled).
-- **Login** / **logout**; optional **Google OAuth** (`/auth/google`, callback).
-- **Forgot password** / **reset password** (token link).
-- **Email verification** (Breeze-style link flow) and **confirm password** where used.
-- **Profile** — update name, email, password; **password change** can require **OTP** (`password/otp` routes).
-- Root **`/`** is the **public catalog** for everyone; signed-in users still reach their **dashboard** from the header.
+- Register → **email OTP** (`register`, `register/verify`, resend throttled).
+- Login / logout; **Google OAuth**; forgot / reset password; Breeze-style **email verification** routes where applicable; **password change** with **OTP** (`password/otp`).
+- **Profile** — name, email, password.
 
-### Host (`auth` + `verified` + `role:host`)
+### Customer (`/customer`, `role:customer`)
 
-- **Dashboard** — entry point after login.
-- **Hotels** — full **CRUD**: province, address, star rating, description, **thumbnail**, **gallery** images, **old/new pricing**, **hotel amenities** sync, active flag; **pagination** on index.
-- **Hotel detail** — view hotel and **active room types** (amenities, pricing, inventory preview).
-- **Room types (“Phòng và giá”)** — list with filters by hotel, **pagination (5 per page)**; **create / edit / delete** per hotel: name, images, max guests, quantity, **area (m²)**, prices, bed lines, **room amenities**, visibility; delete confirmation modal (**Alpine** + `x-teleport="body"` for full-screen overlay).
+- **Bookings** — list, detail, **create** from hotel flow, **cancel** with policy preview, **edit dates** (where allowed), **rebook** entry.
+- **Payments** — **PayPal** and **MoMo** resume/return/cancel routes; webhooks `POST /webhooks/paypal`, `POST /webhooks/momo`.
+- **PDF invoice** — `bookings/{booking}/invoice.pdf` (Dompdf).
+- **Electronic pass / QR** — check-in payload for host; link to **guest check-in** page.
+- **Messages** — per-booking thread with host.
+- **Favorites** — list + toggle on catalog/detail.
+- **Waitlist** — list, create per hotel/room/dates.
+- **Reviews** — after **completed** stays; **“My reviews”** index; reminder CTAs in **status-changed** and **follow-up** emails.
+- **Inbox badge** — Alpine poll `GET /customer/inbox/unread-count` (throttled) for unread host messages.
 
-### Staff (`role:staff`)
+### Host (`/host`, `role:host`)
 
-- **Dashboard**; **bookings** index, **pending**, and **history** (placeholders / flows for operational use).
+- **Dashboard**; **hotels** CRUD (pricing multipliers, email templates JSON, etc.).
+- **Room types** — CRUD, images, beds, amenities; **physical rooms** per type (`/host/room-types/{roomType}/physical-rooms`) for labels + **assignment on bookings** (overlap-checked); **availability** grid by type + **per physical room** when units exist.
+- **Bookings** — filter, **status updates** (shared rules with staff), internal notes/tags, **mark paid**, **refund transaction** status, **check-in** (QR / token), **messages** with guest.
+- **Cancellation policy** editor (tiers + reminder flags).
+- **Reports** — charts (revenue / cancel / no-show), **CSV** and **PDF** export (6‑month window).
+- **Promo codes** — CRUD per hotel.
+- **Email templates** — per-hotel JSON editor.
 
-### Customer (`role:customer`)
+### Staff (`/staff`, `role:staff`)
 
-- **Dashboard**; **bookings** list, **cancellable** bookings, **rebook** entry points (UI flows aligned with course/demo scope).
+- **Dashboard**; bookings **index**, **pending**, **history**; **status updates** (same service as host, scoped).
 
-### Admin (`role:admin`)
+### Admin (`/admin`, `role:admin`)
 
-- **Dashboard**; **system overview** page for high-level monitoring.
+- **Dashboard**; **system overview**; **settings** (effective config display).
+- **Users** — list (STT column), edit role/active/name/email.
+- **Hotels** — system-wide list + **rich detail** (gallery, policy, room types, etc.).
+- **Bookings** — system-wide list/filter.
+- **Audit log** — browse recorded actions.
 
-### Layout & UI
+### REST API (`routes/api.php`)
 
-- **Sidebar** navigation by role; **app** layout with header (title slot, profile, logout).
-- **Tailwind** pagination views (`vendor.pagination.tailwind`) registered in `AppServiceProvider`.
-- **Branding** — favicon SVGs under `public/`; `APP_NAME=Booking` in `.env.example`.
+- **`GET /api/v1/health`** — JSON health (throttled).
+- **`GET /api/v1/hotels`**, **`GET /api/v1/hotels/{slug}`** — public catalog JSON (throttled).
+- **`POST /api/v1/auth/token`** — Sanctum token (throttled).
+- **`GET /api/v1/me`**, **`GET /api/v1/my-bookings`** — `auth:sanctum` (throttled).
+
+### Platform services (selected)
+
+- **Room availability** by `room_type.quantity` and overlapping **pending/confirmed** bookings (`RoomAvailabilityService`).
+- **Booking lifecycle**, **cancellation fees**, **ledger / transactions**, **notifications** (created, status changed, reminders, follow-ups, host pending SLA), **waitlist** slot notifications.
+- **Audit logging** (`AuditLogService`, configurable via `BOOKING_AUDIT_ENABLED`).
+- **Idempotency** keys (where enabled), **PayPal / MoMo** checkout helpers.
 
 ## Project structure (high level)
 
 | Area | Paths |
 |------|--------|
-| **HTTP** | `Public\HotelCatalogController` (home + public hotel show), `Host\HotelController`, `Host\RoomTypeController`, `Host\BookingController`, `Host\DashboardController`, `Staff\*`, `Customer\*`, `Admin\*`, `ProfileController`, `Auth\*` (session, register, **RegisterOtpController**, **GoogleAuthController**, **PasswordOtpVerificationController**, password reset, email verification) |
-| **Models** | `User`, `Hotel`, `HotelImage`, `Province`, `Amenity`, `RoomAmenity`, `RoomType`, `RoomTypeBedLine`, `RoomTypeImage`, … |
-| **Form requests** | `App\Http\Requests\Host\StoreHotelRequest`, `UpdateHotelRequest`, `StoreRoomTypeRequest`, `UpdateRoomTypeRequest` |
-| **Support** | `App\Support\PublicDisk` — stable **`/storage/...`** URLs for the public disk |
-| **Views** | `resources/views/layouts/` (`app`, `guest`, `sidebar`, `navigation`), `public/hotels/*`, `components/public-layout.blade.php`, `host/hotels/*`, `host/room-types/*`, `components/` (`flash-status`, `icon/*`, `application-logo`), `auth/*`, role dashboards, `profile/*`, `vendor/pagination/*` |
-| **Routes** | `routes/web.php` — role-prefixed groups (`admin`, `host`, `staff`, `customer`), Breeze routes in `routes/auth.php` |
-
-There is **no** separate `routes/api.php` REST surface in this repository; APIs can be added later (e.g. Laravel Sanctum) if you extend the project.
+| **Public HTTP** | `Public\HotelCatalogController`, `Public\LegalPageController`, `Public\SitemapController`, `Public\RobotsController`, `Public\GuestCheckInController` |
+| **Host** | `Host\HotelController`, `Host\RoomTypeController`, `Host\PhysicalRoomController`, `Host\BookingController`, `Host\BookingCheckInController`, `Host\BookingMessageController`, `Host\AvailabilityController`, `Host\CancellationPolicyController`, `Host\ReportsController`, `Host\PromoCodeController`, `Host\HotelEmailTemplateController`, … |
+| **Customer** | `Customer\BookingController`, `Customer\BookingPaymentController`, `Customer\BookingInvoiceController`, `Customer\BookingPassController`, `Customer\BookingMessageController`, `Customer\HotelFavoriteController`, `Customer\WaitlistController`, `Customer\ReviewController`, `Customer\CustomerInboxController` |
+| **Staff / Admin** | `Staff\*`, `Admin\*` |
+| **API** | `App\Http\Controllers\Api\V1\*` |
+| **Webhooks** | `Webhooks\PayPalWebhookController`, `Webhooks\MoMoWebhookController` |
+| **Models** | `User`, `Hotel`, `HotelImage`, `Booking`, `BookingMessage`, `Review`, `PhysicalRoom`, `PromoCode`, `AuditLog`, … |
+| **Views** | `resources/views/public/*`, `host/*`, `customer/*`, `staff/*`, `admin/*`, `components/public-layout.blade.php`, `layouts/*` |
+| **Routes** | `routes/web.php`, `routes/api.php`, `routes/auth.php` |
 
 ## Caching & queues
 
-- `.env.example` uses **`CACHE_STORE=database`** and **`SESSION_DRIVER=database`** so a local **XAMPP** setup does not require Redis.
-- **`QUEUE_CONNECTION=database`** — run **`php artisan queue:work`** (or **`composer run dev`**) if you rely on **queued** jobs or mail.
+- `.env.example` favors **`CACHE_STORE=database`**, **`SESSION_DRIVER=database`**, **`QUEUE_CONNECTION=database`** for simple local / XAMPP setups.
+- Use **`php artisan queue:work`** (or **`composer run dev`**) so **queued mail** and jobs run.
 
-## Image URLs
+## PDF generation
 
-After `php artisan storage:link`, public disk files are available under:
-
-- **`/storage/{path}`** — e.g. hotel and room-type images stored via `store(..., 'public')`.
+- Customer **invoices** and host **report PDF** use **barryvdh/laravel-dompdf** (`Pdf::loadView(...)`).
 
 ## Testing
 
@@ -160,16 +186,15 @@ After `php artisan storage:link`, public disk files are available under:
 php artisan test
 ```
 
-## Roadmap / possible extensions
+Feature tests include e.g. legal pages and sitemap (`RefreshDatabase` where needed).
 
-| Area | Today | Possible direction |
-|------|--------|-------------------|
-| **Guest storefront** | Public **hotel list + detail** at `/` and `/hotels/{slug}` | Search facets, maps, availability calendar |
-| **Bookings** | Role-scoped controllers / views | End-to-end reservation, payments, emails |
-| **API** | Web routes only | Sanctum REST or SPA frontend |
-| **i18n** | Mixed EN/VI strings in views | Laravel localization files |
+## Possible next steps
 
-This project is intended as a **learning / demo** monolith; production hardening (rate limits, audits, monitoring) is left to the maintainer.
+| Idea | Notes |
+|------|--------|
+| **Compare / cart** (session) | Not implemented |
+| **Full i18n** (EN/VI files) | Many strings are Vietnamese in views |
+| **Stricter production** | WAF, monitoring, backups, CSP, rate limits beyond current API throttles |
 
 ## Code style
 
