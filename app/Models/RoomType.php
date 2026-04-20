@@ -73,4 +73,9 @@ class RoomType extends Model
     {
         return $this->hasMany(Booking::class)->latest('id');
     }
+
+    public function physicalRooms(): HasMany
+    {
+        return $this->hasMany(PhysicalRoom::class)->orderBy('sort_order')->orderBy('id');
+    }
 }

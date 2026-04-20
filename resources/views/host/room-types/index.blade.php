@@ -17,12 +17,12 @@
         >
             <x-flash-status />
 
-            <div class="flex flex-col gap-6">
+            <div id="hostRoomTypesFilterRoot" class="flex flex-col gap-6">
                 <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                    <form method="GET" action="{{ route('host.rooms.index') }}" class="flex flex-wrap items-end gap-3">
+                    <form method="GET" action="{{ route('host.rooms.index') }}" class="flex flex-wrap items-end gap-3" data-ajax-filter-form data-ajax-target="#hostRoomTypesFilterRoot">
                         <div>
                             <x-input-label for="hotel_id" :value="__('Lọc theo khách sạn')" />
-                            <select id="hotel_id" name="hotel_id" onchange="this.form.submit()"
+                            <select id="hotel_id" name="hotel_id"
                                 class="mt-1 block min-w-[220px] rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm focus:border-bcom-blue focus:ring-2 focus:ring-bcom-blue/20">
                                 <option value="">{{ __('— Tất cả khách sạn —') }}</option>
                                 @foreach ($hotels as $h)
@@ -150,6 +150,7 @@
                                         <td class="min-w-0 px-1.5 py-4 align-top sm:px-2">
                                             <div class="flex flex-nowrap items-center justify-end gap-1">
                                                 <a href="{{ route('host.hotels.show', $rt->hotel) }}" class="inline-flex shrink-0 items-center rounded-md border border-blue-300 bg-blue-50 px-2 py-1 text-[11px] font-semibold leading-none text-blue-800 hover:bg-blue-100 sm:rounded-lg sm:px-2.5 sm:py-1.5 sm:text-xs" title="{{ __('Trang khách sạn (loại phòng nằm trong khách sạn này)') }}">{{ __('Xem') }}</a>
+                                                <a href="{{ route('host.room-types.physical-rooms.index', $rt) }}" class="inline-flex shrink-0 items-center rounded-md border border-emerald-300 bg-emerald-50 px-2 py-1 text-[11px] font-semibold leading-none text-emerald-900 hover:bg-emerald-100 sm:rounded-lg sm:px-2.5 sm:py-1.5 sm:text-xs" title="{{ __('Phòng vật lý') }}">{{ __('Phòng vật lý') }}</a>
                                                 <a href="{{ route('host.room-types.edit', $rt) }}" class="inline-flex shrink-0 items-center rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] font-semibold leading-none text-amber-800 hover:bg-amber-100 sm:rounded-lg sm:px-2.5 sm:py-1.5 sm:text-xs">{{ __('Sửa') }}</a>
                                                 <button type="button"
                                                     class="inline-flex shrink-0 items-center rounded-md border border-sky-300 bg-sky-50 px-2 py-1 text-[11px] font-semibold leading-none text-bcom-navy hover:bg-sky-100 sm:rounded-lg sm:px-2.5 sm:py-1.5 sm:text-xs"

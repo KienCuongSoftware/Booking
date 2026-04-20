@@ -9,7 +9,7 @@
         </a>
     </div>
 
-    <nav class="flex-1 space-y-2 px-4 py-5 text-sm">
+    <nav class="space-y-2 px-4 py-5 text-sm">
         <x-sidebar.nav-link :href="route(auth()->user()->role->dashboardRouteName())" :active="request()->routeIs('*.dashboard')">
             {{ __('Bảng điều khiển') }}
         </x-sidebar.nav-link>
@@ -27,12 +27,6 @@
             <x-sidebar.nav-link :href="route('admin.bookings.index')" :active="request()->routeIs('admin.bookings.*')">
                 {{ __('Đơn đặt (toàn hệ thống)') }}
             </x-sidebar.nav-link>
-            <x-sidebar.nav-link :href="route('admin.audit-logs.index')" :active="request()->routeIs('admin.audit-logs.*')">
-                {{ __('Nhật ký audit') }}
-            </x-sidebar.nav-link>
-            <x-sidebar.nav-link :href="route('admin.settings')" :active="request()->routeIs('admin.settings')">
-                {{ __('Cấu hình hiệu lực') }}
-            </x-sidebar.nav-link>
         @endif
 
         @if (auth()->user()->role->value === 'host')
@@ -40,7 +34,7 @@
                 :active="request()->routeIs('host.hotels.index', 'host.hotels.create', 'host.hotels.edit', 'host.hotels.show')">
                 {{ __('Khách sạn') }}
             </x-sidebar.nav-link>
-            <x-sidebar.nav-link :href="route('host.rooms.index')" :active="request()->routeIs('host.rooms.*')">
+            <x-sidebar.nav-link :href="route('host.rooms.index')" :active="request()->routeIs('host.rooms.*', 'host.room-types.physical-rooms.*', 'host.physical-rooms.*')">
                 {{ __('Phòng') }}
             </x-sidebar.nav-link>
             <x-sidebar.nav-link :href="route('host.bookings.index')" :active="request()->routeIs('host.bookings.*')">
@@ -77,7 +71,7 @@
         @endif
     </nav>
 
-    <div class="mt-auto border-t border-white/15 px-4 py-4">
+    <div class="border-t border-white/15 px-4 py-3">
         <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button type="submit" class="block w-full rounded-lg px-3 py-2.5 text-start text-sm font-medium text-sky-100 transition hover:bg-white/10 hover:text-white">

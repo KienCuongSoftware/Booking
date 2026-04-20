@@ -18,6 +18,7 @@ class Booking extends Model
         'customer_id',
         'hotel_id',
         'room_type_id',
+        'physical_room_id',
         'check_in_date',
         'check_out_date',
         'guest_count',
@@ -110,6 +111,11 @@ class Booking extends Model
     public function roomType(): BelongsTo
     {
         return $this->belongsTo(RoomType::class);
+    }
+
+    public function physicalRoom(): BelongsTo
+    {
+        return $this->belongsTo(PhysicalRoom::class);
     }
 
     public function statusChangedBy(): BelongsTo

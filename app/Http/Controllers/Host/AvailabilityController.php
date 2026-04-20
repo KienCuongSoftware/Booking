@@ -23,7 +23,7 @@ class AvailabilityController extends Controller
         $selectedHotel = Hotel::query()
             ->where('host_id', $request->user()->id)
             ->where('id', $request->integer('hotel_id') ?: ($hotels->first()->id ?? 0))
-            ->with('roomTypes:id,hotel_id,name,quantity,is_active')
+            ->with(['roomTypes:id,hotel_id,name,quantity,is_active', 'roomTypes.physicalRooms' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')->orderBy('id')])
             ->first();
 
         $start = Carbon::today();
@@ -33,6 +33,7 @@ class AvailabilityController extends Controller
             ->values();
 
         $matrix = [];
+        $physicalRows = [];
         if ($selectedHotel) {
             $bookings = Booking::query()
                 ->where('hotel_id', $selectedHotel->id)
@@ -58,6 +59,42 @@ class AvailabilityController extends Controller
                     ];
                 }
             }
+
+            $assignedBookings = Booking::query()
+                ->where('hotel_id', $selectedHotel->id)
+                ->whereNotNull('physical_room_id')
+                ->whereIn('status', [
+                    BookingStatus::Pending->value,
+                    BookingStatus::Confirmed->value,
+                    BookingStatus::Completed->value,
+                ])
+                ->whereDate('check_in_date', '<=', $start->copy()->addDays($days)->toDateString())
+                ->whereDate('check_out_date', '>', $start->toDateString())
+                ->get(['physical_room_id', 'check_in_date', 'check_out_date', 'booking_code']);
+
+            foreach ($selectedHotel->roomTypes->where('is_active', true) as $roomType) {
+                $rooms = $roomType->physicalRooms;
+                if ($rooms->isEmpty()) {
+                    continue;
+                }
+                foreach ($rooms as $physicalRoom) {
+                    $cells = [];
+                    foreach ($dateKeys as $dateKey) {
+                        $night = Carbon::parse($dateKey)->startOfDay();
+                        $code = $assignedBookings->first(function (Booking $b) use ($physicalRoom, $night): bool {
+                            return (int) $b->physical_room_id === (int) $physicalRoom->id
+                                && $b->check_in_date->lte($night)
+                                && $b->check_out_date->gt($night);
+                        })?->booking_code;
+                        $cells[$dateKey] = $code ?? '—';
+                    }
+                    $physicalRows[] = [
+                        'roomType' => $roomType,
+                        'physicalRoom' => $physicalRoom,
+                        'cells' => $cells,
+                    ];
+                }
+            }
         }
 
         return view('host.availability.index', [
@@ -65,6 +102,7 @@ class AvailabilityController extends Controller
             'selectedHotel' => $selectedHotel,
             'dateKeys' => $dateKeys,
             'matrix' => $matrix,
+            'physicalRows' => $physicalRows,
         ]);
     }
 }

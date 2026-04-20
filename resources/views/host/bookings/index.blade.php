@@ -9,7 +9,8 @@
         <div class="max-w-7xl mx-auto space-y-5">
             <x-flash-status />
 
-            <form method="GET" class="flex flex-wrap items-end gap-3">
+            <div id="hostBookingsFilterRoot" class="space-y-5">
+            <form method="GET" class="flex flex-wrap items-end gap-3" data-ajax-filter-form data-ajax-target="#hostBookingsFilterRoot">
                 <div class="w-full sm:w-64">
                     <x-input-label for="status" :value="__('Lọc trạng thái')" />
                     <select id="status" name="status" class="mt-1 block w-full rounded-xl border-gray-200 text-sm focus:border-bcom-blue focus:ring-bcom-blue/20">
@@ -91,7 +92,7 @@
                                             </span>
                                             @if ($booking->transactions->isNotEmpty())
                                                 <p class="mt-2 text-xs text-gray-500">
-                                                    {{ __('Ledger') }}: {{ $booking->transactions->count() }} {{ __('giao dịch') }}
+                                                    {{ __('Sổ giao dịch') }}: {{ $booking->transactions->count() }} {{ __('giao dịch') }}
                                                 </p>
                                             @endif
                                         </td>
@@ -106,7 +107,7 @@
                                                     @elseif ($booking->status->value === 'confirmed')
                                                         <option value="completed">{{ __('Hoàn tất') }}</option>
                                                         <option value="cancelled">{{ __('Hủy đơn') }}</option>
-                                                        <option value="no_show">{{ __('Không đến (No-show)') }}</option>
+                                                        <option value="no_show">{{ __('Không đến') }}</option>
                                                     @else
                                                         <option value="" selected disabled>{{ __('Trạng thái hiện tại không thể cập nhật') }}</option>
                                                     @endif
@@ -133,13 +134,30 @@
                                                     {{ __('Cập nhật') }}
                                                 </button>
                                             </form>
+                                            @if ($booking->roomType->physicalRooms->where('is_active', true)->isNotEmpty())
+                                                <form method="POST" action="{{ route('host.bookings.update-physical-room', $booking) }}" class="mt-3 space-y-1">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <label class="text-xs font-medium text-gray-700" for="physical_room_{{ $booking->id }}">{{ __('Phòng vật lý') }}</label>
+                                                    <select id="physical_room_{{ $booking->id }}" name="physical_room_id" class="w-full rounded-lg border-gray-200 text-xs focus:border-bcom-blue focus:ring-bcom-blue/20">
+                                                        <option value="">{{ __('— Chưa gán —') }}</option>
+                                                        @foreach ($booking->roomType->physicalRooms->where('is_active', true) as $pr)
+                                                            <option value="{{ $pr->id }}" @selected((int) old('physical_room_id', $booking->physical_room_id) === (int) $pr->id)>{{ $pr->label }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    @error('physical_room_id')
+                                                        <p class="text-xs text-red-600">{{ $message }}</p>
+                                                    @enderror
+                                                    <button type="submit" class="mt-1 inline-flex rounded-lg bg-slate-700 px-2 py-1 text-xs font-semibold text-white hover:bg-slate-800">{{ __('Lưu gán phòng') }}</button>
+                                                </form>
+                                            @endif
                                             <a href="{{ route('host.bookings.messages.index', $booking) }}" class="mt-2 inline-block text-xs font-semibold text-bcom-blue hover:underline">{{ __('Tin nhắn với khách') }}</a>
                                             <form method="POST" action="{{ route('host.bookings.check-in', $booking) }}" class="mt-3 space-y-1">
                                                 @csrf
-                                                <label class="text-xs font-medium text-gray-700" for="checkin_token_{{ $booking->id }}">{{ __('Check-in (QR payload)') }}</label>
+                                                <label class="text-xs font-medium text-gray-700" for="checkin_token_{{ $booking->id }}">{{ __('Check-in (nội dung QR)') }}</label>
                                                 <div class="flex gap-1">
-                                                    <input id="checkin_token_{{ $booking->id }}" type="text" name="token" class="w-full rounded-lg border-gray-200 text-xs focus:border-bcom-blue focus:ring-bcom-blue/20" placeholder='JSON / BK...|token / URL có token'>
-                                                    <button type="submit" class="inline-flex shrink-0 items-center rounded-lg bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700">{{ __('OK') }}</button>
+                                                    <input id="checkin_token_{{ $booking->id }}" type="text" name="token" class="w-full rounded-lg border-gray-200 text-xs focus:border-bcom-blue focus:ring-bcom-blue/20" placeholder='Dữ liệu QR / BK...|token / URL có token'>
+                                                    <button type="submit" class="inline-flex shrink-0 items-center rounded-lg bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700">{{ __('Xác nhận') }}</button>
                                                 </div>
                                                 <p class="text-[11px] text-gray-500">{{ __('Chỉ check-in được đơn đã xác nhận và đúng ngày lưu trú.') }}</p>
                                             </form>
@@ -148,7 +166,7 @@
                                             @endphp
                                             @if ($refunds->isNotEmpty())
                                                 <div class="mt-3 space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-2">
-                                                    <p class="text-xs font-semibold text-amber-800">{{ __('Refund workflow') }}</p>
+                                                    <p class="text-xs font-semibold text-amber-800">{{ __('Luồng hoàn tiền') }}</p>
                                                     @foreach ($refunds as $refundTx)
                                                         <form method="POST" action="{{ route('host.bookings.update-refund-status', [$booking, $refundTx]) }}" class="space-y-1">
                                                             @csrf
@@ -159,9 +177,9 @@
                                                             </p>
                                                             <div class="flex items-center gap-2">
                                                                 <select name="status" class="w-full rounded-lg border-amber-200 bg-white text-xs focus:border-amber-400 focus:ring-amber-200">
-                                                                    <option value="processing">{{ __('PROCESSING') }}</option>
-                                                                    <option value="refunded">{{ __('REFUNDED') }}</option>
-                                                                    <option value="failed">{{ __('FAILED') }}</option>
+                                                                    <option value="processing">{{ __('ĐANG XỬ LÝ') }}</option>
+                                                                    <option value="refunded">{{ __('ĐÃ HOÀN') }}</option>
+                                                                    <option value="failed">{{ __('THẤT BẠI') }}</option>
                                                                 </select>
                                                                 <button type="submit" class="inline-flex items-center rounded-lg bg-amber-600 px-2 py-1 text-xs font-semibold text-white hover:bg-amber-700">
                                                                     {{ __('Lưu') }}
@@ -180,6 +198,7 @@
                 </div>
                 <div>{{ $bookings->links() }}</div>
             @endif
+            </div>
         </div>
     </div>
 </x-app-layout>
